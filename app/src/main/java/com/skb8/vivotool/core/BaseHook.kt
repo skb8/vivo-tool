@@ -7,6 +7,8 @@ import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import java.lang.reflect.Member
+import java.lang.reflect.Method
 
 /**
  * Базовый класс для всех хуков.
@@ -156,6 +158,14 @@ abstract class BaseHook {
     ): XC_MethodHook.Unhook? =
         hookMethod(this, methodName, parameterTypes, XC_MethodReplacement.DO_NOTHING)
 
+    /**
+     * Метод не выполняется вообще: возвращается нейтральное значение под его
+     * тип (`null`, `false`, `0`). Безопаснее, чем `doNothing`, когда сигнатура
+     * метода в прошивке неизвестна.
+     */
+    protected fun Class<*>.skipAll(methodName: String): Set<XC_MethodHook.Unhook> =
+        hookAllBefore(methodName) { param -> param.result = neutralResult(param.method) }
+
     /** Хук всех перегрузок метода — до выполнения. */
     protected fun Class<*>.hookAllBefore(
         methodName: String,
@@ -202,6 +212,21 @@ abstract class BaseHook {
             (hookParam.thisObject as? android.app.Application)?.let(action)
         }
     }
+
+    /** Значение, которое можно вернуть вместо вызова метода, не сломав вызывающий код. */
+    protected fun neutralResult(member: Member?): Any? =
+        when ((member as? Method)?.returnType) {
+            null, Void.TYPE -> null
+            Boolean::class.javaPrimitiveType -> false
+            Int::class.javaPrimitiveType -> 0
+            Long::class.javaPrimitiveType -> 0L
+            Float::class.javaPrimitiveType -> 0f
+            Double::class.javaPrimitiveType -> 0.0
+            Short::class.javaPrimitiveType -> 0.toShort()
+            Byte::class.javaPrimitiveType -> 0.toByte()
+            Char::class.javaPrimitiveType -> '\u0000'
+            else -> null
+        }
 
     // ---------------------------------------------------------------------
     // Внутренняя реализация

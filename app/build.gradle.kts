@@ -9,8 +9,8 @@ plugins {
 
 /**
  * Единственный источник правды для scope модуля — файл `app/module-scope.txt`.
- * Из него генерируются массив ресурсов `module_scope` (легаси-формат Xposed)
- * и `META-INF/xposed/scope.list` вместе с остальными метаданными нового формата LSPosed.
+ * Из него генерируются: массив ресурсов `module_scope` (легаси-формат Xposed),
+ * `META-INF/xposed/scope.list` (новый формат LSPosed) и объект `ModuleScope` для UI.
  */
 abstract class GenerateXposedMetadata : DefaultTask() {
 
@@ -41,11 +41,17 @@ abstract class GenerateXposedMetadata : DefaultTask() {
     @get:Input
     abstract val minApi: Property<Int>
 
+    @get:Input
+    abstract val generatedPackage: Property<String>
+
     @get:OutputDirectory
     abstract val resDir: DirectoryProperty
 
     @get:OutputDirectory
     abstract val javaResourcesDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val kotlinDir: DirectoryProperty
 
     @TaskAction
     fun generate() {
@@ -66,9 +72,7 @@ abstract class GenerateXposedMetadata : DefaultTask() {
 
         val xposedDir = javaResourcesDir.get().asFile.resolve("META-INF/xposed").apply { mkdirs() }
         xposedDir.resolve("java_init.list").writeText(entryClass.get() + "\n")
-        xposedDir.resolve("scope.list").writeText(
-            if (packages.isEmpty()) "" else packages.joinToString(separator = "\n", postfix = "\n")
-        )
+        xposedDir.resolve("scope.list").writeText(packages.joinToString(separator = "\n", postfix = "\n"))
         xposedDir.resolve("module.prop").writeText(
             buildString {
                 appendLine("id=${moduleId.get()}")
@@ -78,6 +82,21 @@ abstract class GenerateXposedMetadata : DefaultTask() {
                 appendLine("author=${moduleAuthor.get()}")
                 appendLine("description=${moduleDescription.get()}")
                 appendLine("minApi=${minApi.get()}")
+            }
+        )
+
+        val pkg = generatedPackage.get()
+        val sourceDir = kotlinDir.get().asFile.resolve(pkg.replace('.', '/')).apply { mkdirs() }
+        sourceDir.resolve("ModuleScope.kt").writeText(
+            buildString {
+                appendLine("package $pkg")
+                appendLine()
+                appendLine("// Сгенерировано из app/module-scope.txt, не редактировать")
+                appendLine("object ModuleScope {")
+                appendLine("    val packages: List<String> = listOf(")
+                packages.forEach { appendLine("        \"$it\",") }
+                appendLine("    )")
+                appendLine("}")
             }
         )
     }
@@ -95,8 +114,8 @@ val moduleScopePackages: Provider<List<String>> =
         }
         .orElse(emptyList())
 
-val appVersionName = "1.0.0"
-val appVersionCode = 1
+val moduleVersionName = "1.0.0"
+val moduleVersionCode = 1
 val hookEntryClass = "com.skb8.vivotool.core.HookEntry"
 
 val generateXposedMetadata = tasks.register<GenerateXposedMetadata>("generateXposedMetadata") {
@@ -107,13 +126,16 @@ val generateXposedMetadata = tasks.register<GenerateXposedMetadata>("generateXpo
     entryClass.set(hookEntryClass)
     moduleId.set("vivo-tool")
     moduleName.set("Vivo Tool")
-    moduleVersion.set(appVersionName)
-    moduleVersionCode.set(appVersionCode)
+    moduleVersion.set(moduleVersionName)
+    moduleVersionCode.set(moduleVersionCode)
     moduleAuthor.set("skb8")
     moduleDescription.set("Модульный набор хуков для прошивок Vivo (LSPosed)")
     minApi.set(93)
+    generatedPackage.set("com.skb8.vivotool.core")
+
     resDir.set(layout.buildDirectory.dir("generated/xposed/res"))
     javaResourcesDir.set(layout.buildDirectory.dir("generated/xposed/resources"))
+    kotlinDir.set(layout.buildDirectory.dir("generated/xposed/kotlin"))
 }
 
 android {
@@ -124,8 +146,8 @@ android {
         applicationId = "com.skb8.vivotool"
         minSdk = 27
         targetSdk = 35
-        versionCode = appVersionCode
-        versionName = appVersionName
+        versionCode = moduleVersionCode
+        versionName = moduleVersionName
     }
 
     signingConfigs {
@@ -162,6 +184,7 @@ android {
 
     sourceSets["main"].res.srcDir(generateXposedMetadata.flatMap { it.resDir })
     sourceSets["main"].resources.srcDir(generateXposedMetadata.flatMap { it.javaResourcesDir })
+    sourceSets["main"].kotlin.srcDir(generateXposedMetadata.flatMap { it.kotlinDir })
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -182,7 +205,7 @@ android {
     }
 }
 
-base.archivesName.set("vivo-tool-$appVersionName")
+base.archivesName.set("vivo-tool-$moduleVersionName")
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
@@ -200,7 +223,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.exifinterface)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
