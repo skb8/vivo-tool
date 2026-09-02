@@ -47,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -154,7 +155,7 @@ private fun CropContent(
         )
     }
 
-    fun cropRect(currentZoom: Float, currentCenter: Offset): IntArray {
+    fun cropRect(currentZoom: Float, currentCenter: Offset): IntRect {
         val cropWidth = (baseWidth / currentZoom).coerceAtMost(source.width.toFloat())
         val cropHeight = (baseHeight / currentZoom).coerceAtMost(source.height.toFloat())
         val left = (currentCenter.x - cropWidth / 2f)
@@ -163,12 +164,9 @@ private fun CropContent(
             .coerceIn(0f, (source.height - cropHeight).coerceAtLeast(0f))
         val width = cropWidth.roundToInt().coerceIn(1, source.width)
         val height = cropHeight.roundToInt().coerceIn(1, source.height)
-        return intArrayOf(
-            left.roundToInt().coerceIn(0, source.width - width),
-            top.roundToInt().coerceIn(0, source.height - height),
-            width,
-            height
-        )
+        val x = left.roundToInt().coerceIn(0, source.width - width)
+        val y = top.roundToInt().coerceIn(0, source.height - height)
+        return IntRect(left = x, top = y, right = x + width, bottom = y + height)
     }
 
     Column(
@@ -212,8 +210,8 @@ private fun CropContent(
                 val rect = cropRect(zoom, center)
                 drawImage(
                     image = imageBitmap,
-                    srcOffset = IntOffset(rect[0], rect[1]),
-                    srcSize = IntSize(rect[2], rect[3]),
+                    srcOffset = IntOffset(rect.left, rect.top),
+                    srcSize = IntSize(rect.width, rect.height),
                     dstOffset = IntOffset.Zero,
                     dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
                     filterQuality = FilterQuality.Medium
@@ -261,10 +259,10 @@ private fun CropContent(
                         val result = withContext(Dispatchers.Default) {
                             val cropped = Bitmap.createBitmap(
                                 source,
-                                rect[0],
-                                rect[1],
-                                rect[2],
-                                rect[3]
+                                rect.left,
+                                rect.top,
+                                rect.width,
+                                rect.height
                             )
                             Bitmap.createScaledBitmap(cropped, targetWidth, targetHeight, true)
                         }
