@@ -35,6 +35,8 @@ class HookEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
         val hooks = HookRegistry.hooksFor(lpparam.packageName)
         if (hooks.isEmpty()) return
 
+        XLog.i("Загружены в ${lpparam.packageName}, подходящих хуков: ${hooks.size}")
+
         for (hook in hooks) {
             when {
                 !hook.isSupported() ->

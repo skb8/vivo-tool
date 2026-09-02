@@ -145,6 +145,31 @@ fun FreeformLimitScreen(onBack: () -> Unit) {
                     )
                 }
             }
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Если не работает",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "1. В LSPosed в области действия модуля должен быть отмечен " +
+                            "«Системный фреймворк» (android).\n" +
+                            "2. Перезагрузить устройство.\n" +
+                            "3. Открыть в LSPosed журнал модуля и найти строки с тегом " +
+                            "VivoTool: там видно, какие классы и методы нашлись в прошивке " +
+                            "и кто именно сворачивает окна.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
         }
     }
 }
