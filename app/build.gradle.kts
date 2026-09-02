@@ -66,7 +66,9 @@ abstract class GenerateXposedMetadata : DefaultTask() {
 
         val xposedDir = javaResourcesDir.get().asFile.resolve("META-INF/xposed").apply { mkdirs() }
         xposedDir.resolve("java_init.list").writeText(entryClass.get() + "\n")
-        xposedDir.resolve("scope.list").writeText(packages.joinToString(separator = "\n", postfix = "\n"))
+        xposedDir.resolve("scope.list").writeText(
+            if (packages.isEmpty()) "" else packages.joinToString(separator = "\n", postfix = "\n")
+        )
         xposedDir.resolve("module.prop").writeText(
             buildString {
                 appendLine("id=${moduleId.get()}")
