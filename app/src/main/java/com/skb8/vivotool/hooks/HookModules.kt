@@ -1,7 +1,6 @@
 package com.skb8.vivotool.hooks
 
 import com.skb8.vivotool.core.BaseHook
-import com.skb8.vivotool.hooks.framework.FreeformWindowLimitHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 
 /**
@@ -22,6 +21,5 @@ object HookModules {
 
     val all: List<BaseHook> = listOf(
         AboutPhoneRomImageHook,
-        FreeformWindowLimitHook,
     )
 }

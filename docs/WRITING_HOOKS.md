@@ -130,16 +130,15 @@ param.resultAs<Int>()
 2. добавить ветку в `ui/AppRoot.kt` → `Route.HookSettings`;
 3. положить composable в `ui/detail/`.
 
-Пример — `ui/detail/FreeformLimitScreen.kt`: выбор режима пишется в настройки,
-а хук читает его на каждый вызов, поэтому перезагрузка не нужна. Для хуков
-системного фреймворка перезагрузка нужна только при включении/выключении
-самого твика.
+Пример — `ui/detail/AboutPhoneImageScreen.kt`. Если хук читает настройку
+через `HookPrefs` на каждый вызов, изменения применяются без перезагрузки.
 
 ## Хуки системного фреймворка
 
 Пакет `Constants.SYSTEM_FRAMEWORK` (`android`) — это `system_server`, куда
-попадают классы из `vivo-services.jar` вроде
-`com.android.server.wm.VivoFreeformWindowManager`.
+попадают классы из `vivo-services.jar` вроде `com.android.server.wm.*`.
+В LSPosed для таких хуков нужно отметить «Системный фреймворк» в области
+действия модуля и перезагрузить устройство.
 
 - Имена классов и методов различаются между прошивками — ищите через
   `findFirstClass(...)` и логируйте, если ничего не нашлось.
