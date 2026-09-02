@@ -45,11 +45,16 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.HookRegistry
 import com.skb8.vivotool.core.ModuleScope
 import com.skb8.vivotool.core.ModuleStatus
+import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 import com.skb8.vivotool.settings.AppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    imageVersion: Int,
+    onPickImage: () -> Unit,
+    onClearImage: () -> Unit
+) {
     val context = LocalContext.current
     val settings = remember { AppSettings(context) }
     val categories = remember { HookRegistry.byCategory() }
@@ -118,14 +123,23 @@ fun MainScreen() {
                         )
                     }
                     items(hooks, key = { it.id }) { hook ->
-                        HookRow(
-                            hook = hook,
-                            enabled = enabledState[hook.id] ?: hook.enabledByDefault,
-                            onToggle = { value ->
-                                enabledState[hook.id] = value
-                                settings.setEnabled(hook, value)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            HookRow(
+                                hook = hook,
+                                enabled = enabledState[hook.id] ?: hook.enabledByDefault,
+                                onToggle = { value ->
+                                    enabledState[hook.id] = value
+                                    settings.setEnabled(hook, value)
+                                }
+                            )
+                            if (hook.id == AboutPhoneRomImageHook.ID) {
+                                AboutPhoneImageCard(
+                                    imageVersion = imageVersion,
+                                    onPickImage = onPickImage,
+                                    onClearImage = onClearImage
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }

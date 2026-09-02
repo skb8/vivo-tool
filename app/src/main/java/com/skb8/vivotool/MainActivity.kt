@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.skb8.vivotool.ui.MainScreen
+import com.skb8.vivotool.ui.AppRoot
 import com.skb8.vivotool.ui.theme.VivoToolTheme
 
 class MainActivity : ComponentActivity() {
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             VivoToolTheme {
-                MainScreen()
+                AppRoot()
             }
         }
     }

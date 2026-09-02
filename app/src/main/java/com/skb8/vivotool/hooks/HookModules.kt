@@ -1,6 +1,7 @@
 package com.skb8.vivotool.hooks
 
 import com.skb8.vivotool.core.BaseHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 
 /**
  * Список подключённых хуков — единственное место, куда нужно добавить свой хук.
@@ -19,7 +20,6 @@ import com.skb8.vivotool.core.BaseHook
 object HookModules {
 
     val all: List<BaseHook> = listOf(
-        // Пока хуков нет. Пример регистрации:
-        // com.skb8.vivotool.hooks.template.TemplateHook,
+        AboutPhoneRomImageHook,
     )
 }

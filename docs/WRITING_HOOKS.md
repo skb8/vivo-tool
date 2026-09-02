@@ -127,6 +127,33 @@ param.resultAs<Int>()
 Настройки хранятся в world-readable `SharedPreferences`, поэтому применяются
 без перезагрузки — при следующем чтении внутри хука.
 
+## Подмена ресурсов и картинок
+
+Хуки ресурсов через `initPackageResources` в LSPosed ненадёжны, поэтому drawable
+подменяются перехватом загрузки — см. `hooks/settings/AboutPhoneRomImageHook.kt`:
+
+- `Resources.loadDrawable` — единая точка и для `getDrawable(id)`, и для
+  `android:src` из XML-разметки;
+- `Resources.openRawResource` — для `BitmapFactory.decodeResource`;
+- идентификатор ресурса берётся по имени: `res.getIdentifier(name, "drawable", pkg)`;
+- размер подменённой картинки подгоняется под `intrinsicWidth/Height` оригинала,
+  чтобы не поехала вёрстка.
+
+Картинку от пользователя передаём через хранилище (base64 в world-readable
+`SharedPreferences`) — каталог данных модуля чужому процессу недоступен:
+
+```kotlin
+// приложение
+ImageStore.save(context, ImageKeys.MY_IMAGE, bitmap)
+
+// хук
+HookImages.bitmap(ImageKeys.MY_IMAGE)   // с кэшем до следующего изменения
+HookImages.bytes(ImageKeys.MY_IMAGE)    // сырые байты для openRawResource
+```
+
+Экран обрезки (`ui/CropScreen.kt`) переиспользуемый: принимает точный размер
+ресурса и возвращает bitmap ровно этого размера.
+
 ## Логи
 
 ```kotlin

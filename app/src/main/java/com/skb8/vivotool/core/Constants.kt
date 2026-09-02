@@ -4,6 +4,12 @@ object Constants {
     /** Имя файла настроек, общего для UI приложения и процессов с хуками. */
     const val PREFS_NAME = "vivo_tool_prefs"
 
+    /**
+     * Отдельный файл для картинок (base64), чтобы основной файл настроек
+     * оставался маленьким и быстро перечитывался внутри хуков.
+     */
+    const val IMAGE_PREFS_NAME = "vivo_tool_images"
+
     /** Тег для logcat и журнала Xposed. */
     const val TAG = "VivoTool"
 
