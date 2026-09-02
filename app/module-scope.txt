@@ -1,0 +1,17 @@
+# Список приложений, которые LSPosed предложит выбрать в области действия модуля.
+#
+# Одна строка — одно имя пакета. Всё после '#' считается комментарием.
+# Из этого файла при сборке генерируются:
+#   - res/values/module_scope.xml  -> @array/module_scope (метаданные xposedscope)
+#   - META-INF/xposed/scope.list   -> новый формат модулей LSPosed
+#   - ModuleScope.packages         -> проверка scope в UI приложения
+#
+# Добавляя хук для нового приложения, обязательно добавьте его пакет сюда,
+# иначе LSPosed не предложит это приложение в списке выбора.
+#
+# Примеры (раскомментируйте нужные):
+# android                        # системный фреймворк (system_server)
+# com.android.systemui           # SystemUI / шторка, статусбар
+# com.android.settings           # настройки
+# com.vivo.upslide               # жесты и шторка Vivo/Funtouch
+# com.bbk.launcher2              # лончер Vivo
