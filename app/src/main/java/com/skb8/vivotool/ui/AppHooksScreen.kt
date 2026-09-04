@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +43,7 @@ import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.settings.AppSettings
+import kotlinx.coroutines.launch
 
 /**
  * Твики одного приложения.
@@ -56,12 +59,18 @@ fun AppHooksScreen(
     onOpenHook: (BaseHook) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings = remember { AppSettings(context) }
     val enabledState = remember(app.packageName) {
         mutableStateMapOf<String, Boolean>().apply {
             app.hooks.forEach { put(it.id, settings.isEnabled(it)) }
         }
     }
+    // Останавливать можно только реальное приложение: у системного фреймворка
+    // и универсального «*» force stop смысла не имеет.
+    val canForceStop = app.installed &&
+        app.packageName != Constants.SYSTEM_FRAMEWORK &&
+        app.packageName != Constants.ALL_PACKAGES
 
     Scaffold(
         topBar = {
@@ -73,6 +82,22 @@ fun AppHooksScreen(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = stringResource(R.string.action_back)
                         )
+                    }
+                },
+                actions = {
+                    if (canForceStop) {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    AppControl.stopAndReport(context, app.packageName)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.StopCircle,
+                                contentDescription = stringResource(R.string.action_force_stop)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -1,7 +1,5 @@
 package com.skb8.vivotool.ui.detail
 
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skb8.vivotool.R
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
+import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook.Source
 import com.skb8.vivotool.settings.AppSettings
 import com.skb8.vivotool.settings.CameraFeature
 import com.skb8.vivotool.settings.CameraFeatureCatalog
@@ -77,10 +76,16 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings = remember { AppSettings(context) }
+    // Ключ — CameraFeature.key, чтобы фичи с одинаковыми именами
+    // в разных классах камеры не мешали друг другу.
     val overrides = remember {
         mutableStateMapOf<String, Boolean>().apply {
-            settings.booleanEntriesWithPrefix(CameraFeatureConfigHook.KEY_PREFIX)
-                .forEach { (key, value) -> put(CameraFeatureConfigHook.featureName(key), value) }
+            Source.entries.forEach { source ->
+                settings.booleanEntriesWithPrefix(source.keyPrefix).forEach { (key, value) ->
+                    val feature = CameraFeatureConfigHook.featureName(source, key)
+                    put("${source.name}:$feature", value)
+                }
+            }
         }
     }
     var query by remember { mutableStateOf("") }
@@ -98,7 +103,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        settings.removeWithPrefix(CameraFeatureConfigHook.KEY_PREFIX)
+                        Source.entries.forEach { settings.removeWithPrefix(it.keyPrefix) }
                         overrides.clear()
                         confirmReset = false
                     }
@@ -129,7 +134,12 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 actions = {
                     IconButton(
                         onClick = {
-                            scope.launch { forceStopCamera(context) }
+                            scope.launch {
+                                AppControl.stopAndReport(
+                                    context,
+                                    CameraFeatureConfigHook.CAMERA_PACKAGE
+                                )
+                            }
                         }
                     ) {
                         Icon(
@@ -223,18 +233,21 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                             }
                         }
 
-                        items(visible, key = { it.name }) { feature ->
+                        items(visible, key = { it.key }) { feature ->
                             FeatureRow(
                                 feature = feature,
-                                override = overrides[feature.name],
+                                override = overrides[feature.key],
                                 onSelect = { value ->
-                                    val key = CameraFeatureConfigHook.settingsKey(feature.name)
+                                    val key = CameraFeatureConfigHook.settingsKey(
+                                        feature.source,
+                                        feature.name
+                                    )
                                     if (value == null) {
                                         settings.remove(key)
-                                        overrides.remove(feature.name)
+                                        overrides.remove(feature.key)
                                     } else {
                                         settings.setBoolean(key, value)
-                                        overrides[feature.name] = value
+                                        overrides[feature.key] = value
                                     }
                                 }
                             )
@@ -243,21 +256,6 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 }
             }
         }
-    }
-}
-
-private suspend fun forceStopCamera(context: Context) {
-    val packageName = CameraFeatureConfigHook.CAMERA_PACKAGE
-    val stopped = withContext(Dispatchers.IO) { AppControl.forceStop(packageName) }
-    if (stopped) {
-        Toast.makeText(
-            context,
-            context.getString(R.string.force_stop_done, packageName),
-            Toast.LENGTH_SHORT
-        ).show()
-    } else {
-        Toast.makeText(context, R.string.force_stop_failed, Toast.LENGTH_LONG).show()
-        AppControl.openAppInfo(context, packageName)
     }
 }
 
@@ -282,12 +280,24 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
                 style = MaterialTheme.typography.titleSmall
             )
             Spacer(Modifier.height(6.dp))
-            Text(
-                text = catalog.configClassName.orEmpty(),
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.outline
-            )
+            catalog.classNames.forEach { className ->
+                Text(
+                    text = className,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+            if (catalog.notFound.isNotEmpty()) {
+                Text(
+                    text = stringResource(
+                        R.string.camera_features_source_missing,
+                        catalog.notFound.joinToString()
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.camera_features_hint),

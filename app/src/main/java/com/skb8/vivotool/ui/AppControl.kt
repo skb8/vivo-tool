@@ -4,7 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.XLog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /**
@@ -14,6 +18,24 @@ import java.util.concurrent.TimeUnit
 object AppControl {
 
     private const val SU_TIMEOUT_SECONDS = 10L
+
+    /**
+     * Останавливает приложение и сообщает результат: если root недоступен,
+     * открывает системный экран «О приложении» с кнопкой остановки.
+     */
+    suspend fun stopAndReport(context: Context, packageName: String) {
+        val stopped = withContext(Dispatchers.IO) { forceStop(packageName) }
+        if (stopped) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.force_stop_done, packageName),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(context, R.string.force_stop_failed, Toast.LENGTH_LONG).show()
+            openAppInfo(context, packageName)
+        }
+    }
 
     /**
      * Пробует остановить приложение через root. Возвращает `false`, если

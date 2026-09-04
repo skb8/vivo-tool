@@ -11,15 +11,16 @@ import java.lang.reflect.Modifier
 /**
  * Подмена доступных фич камеры.
  *
- * Прошивка держит набор фич в классе, имя которого зависит от модели:
- * `com.android.camera.featureconfig.FeatureConfig_meat_<ro.product.name>`
- * (например `FeatureConfig_meat_PD2425`), который наследуется от
- * `FeatureConfig_MEAT` с общими значениями.
+ * Фичи лежат в двух местах (см. [Source]):
+ *  - класс под конкретную модель `FeatureConfig_meat_<ro.product.name>`
+ *    (например `FeatureConfig_meat_PD2425`) с наследованием от `FeatureConfig_MEAT` —
+ *    это значения «из прошивки»;
+ *  - `FeatureManager`, который поверх них учитывает возможности платформы,
+ *    поэтому одна и та же фича может быть выключена именно здесь.
  *
  * Хук подменяет методы с типом возврата `boolean`: каждая фича может быть
- * оставлена как есть, принудительно включена или выключена. Значения берутся
- * из настроек, список фич собирает само приложение — см.
- * `settings/CameraFeatureLoader.kt`.
+ * оставлена как есть, принудительно включена или выключена. Список фич
+ * собирает само приложение — см. `settings/CameraFeatureLoader.kt`.
  *
  * Переопределения читаются один раз при старте процесса камеры, поэтому
  * после изменения нужно закрыть камеру (force stop).
@@ -31,13 +32,19 @@ object CameraFeatureConfigHook : BaseHook() {
     /** Пакет приложения камеры. */
     const val CAMERA_PACKAGE = "com.android.camera"
 
-    /** Префикс ключей настроек: `camera_feature_<имя метода>` = true/false. */
-    const val KEY_PREFIX = "camera_feature_"
-
     private const val CONFIG_PACKAGE = "com.android.camera.featureconfig"
 
     private const val BASE_CONFIG_CLASS =
         "com.android.camera.featureconfig.configuration.loader.FeatureConfig_MEAT"
+
+    /**
+     * Источник фич. Префикс ключа настроек у каждого свой, поэтому фичи
+     * с одинаковыми именами в разных классах не конфликтуют.
+     */
+    enum class Source(val keyPrefix: String) {
+        CONFIG("camera_feature_"),
+        MANAGER("camera_manager_")
+    }
 
     override val id: String = ID
 
@@ -48,45 +55,53 @@ object CameraFeatureConfigHook : BaseHook() {
     override val targetPackages: Set<String> = setOf(CAMERA_PACKAGE)
 
     /** Ключ настройки для фичи. */
-    fun settingsKey(feature: String): String = KEY_PREFIX + feature
+    fun settingsKey(source: Source, feature: String): String = source.keyPrefix + feature
 
     /** Имя фичи из ключа настройки. */
-    fun featureName(settingsKey: String): String = settingsKey.removePrefix(KEY_PREFIX)
+    fun featureName(source: Source, settingsKey: String): String =
+        settingsKey.removePrefix(source.keyPrefix)
 
     /**
-     * Возможные имена класса конфигурации в порядке приоритета:
+     * Возможные имена класса в порядке приоритета: для конфигурации это
      * сначала класс под конкретную модель, затем общий базовый.
      */
-    fun configClassCandidates(product: String = Build.PRODUCT): List<String> = buildList {
-        if (product.isNotBlank()) {
-            add("$CONFIG_PACKAGE.FeatureConfig_meat_$product")
-            add("$CONFIG_PACKAGE.FeatureConfig_meat_${product.uppercase()}")
+    fun classCandidates(source: Source, product: String = Build.PRODUCT): List<String> =
+        when (source) {
+            Source.CONFIG -> buildList {
+                if (product.isNotBlank()) {
+                    add("$CONFIG_PACKAGE.FeatureConfig_meat_$product")
+                    add("$CONFIG_PACKAGE.FeatureConfig_meat_${product.uppercase()}")
+                }
+                add(BASE_CONFIG_CLASS)
+            }.distinct()
+
+            Source.MANAGER -> listOf("$CONFIG_PACKAGE.FeatureManager")
         }
-        add(BASE_CONFIG_CLASS)
-    }.distinct()
 
     override fun onHook() {
-        val overrides = readOverrides()
+        Source.entries.forEach(::applyOverrides)
+    }
+
+    private fun applyOverrides(source: Source) {
+        val overrides = readOverrides(source)
         if (overrides.isEmpty()) {
-            XLog.i("[$id] переопределений нет, конфигурация камеры не тронута")
+            XLog.d("[$id] ${source.name}: переопределений нет")
             return
         }
 
-        val configClass = configClassCandidates().firstNotNullOfOrNull { findClassOrNull(it) }
-        if (configClass == null) {
-            XLog.w(
-                "[$id] класс конфигурации не найден, искали: " +
-                    configClassCandidates().joinToString()
-            )
+        val candidates = classCandidates(source)
+        val target = candidates.firstNotNullOfOrNull { findClassOrNull(it) }
+        if (target == null) {
+            XLog.w("[$id] ${source.name}: класс не найден, искали: ${candidates.joinToString()}")
             return
         }
-        XLog.i("[$id] конфигурация: ${configClass.name}, переопределений: ${overrides.size}")
+        XLog.i("[$id] ${target.name}: переопределений ${overrides.size}")
 
         var applied = 0
         overrides.forEach { (feature, value) ->
-            val methods = booleanMethods(configClass, feature)
+            val methods = booleanMethods(target, feature)
             if (methods.isEmpty()) {
-                XLog.w("[$id] фича '$feature' не найдена в ${configClass.name}")
+                XLog.w("[$id] фича '$feature' не найдена в ${target.name}")
                 return@forEach
             }
             methods.forEach { method ->
@@ -96,13 +111,13 @@ object CameraFeatureConfigHook : BaseHook() {
                 }
             }
         }
-        XLog.i("[$id] применено методов: $applied")
+        XLog.i("[$id] ${source.name}: применено методов $applied")
     }
 
-    private fun readOverrides(): Map<String, Boolean> =
-        HookPrefs.entriesWithPrefix(KEY_PREFIX)
+    private fun readOverrides(source: Source): Map<String, Boolean> =
+        HookPrefs.entriesWithPrefix(source.keyPrefix)
             .mapNotNull { (key, value) ->
-                (value as? Boolean)?.let { featureName(key) to it }
+                (value as? Boolean)?.let { featureName(source, key) to it }
             }
             .toMap()
 
@@ -111,9 +126,9 @@ object CameraFeatureConfigHook : BaseHook() {
      * фича может быть объявлена и в классе модели, и в базовом конфиге,
      * а вызвана через `super`, поэтому подменяем каждую.
      */
-    private fun booleanMethods(configClass: Class<*>, name: String): List<Method> {
+    private fun booleanMethods(target: Class<*>, name: String): List<Method> {
         val found = mutableListOf<Method>()
-        var next: Class<*>? = configClass
+        var next: Class<*>? = target
         while (true) {
             val clazz = next ?: break
             if (clazz == Any::class.java) break

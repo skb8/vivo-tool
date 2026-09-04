@@ -65,8 +65,9 @@
     <string name="camera_features_search">Search a feature</string>
     <string name="camera_features_summary">Features found: %1$d</string>
     <string name="camera_features_summary_changed">Features found: %1$d · changed: %2$d</string>
-    <string name="camera_features_hint">Values are read from the firmware. After changing them force stop the camera — overrides are applied when it starts.</string>
+    <string name="camera_features_hint">Values are read from the firmware. FeatureManager also depends on the platform, so some of its defaults cannot be determined outside the camera. After changing anything force stop the camera — overrides are applied when it starts.</string>
     <string name="camera_features_empty">Nothing found</string>
+    <string name="camera_features_source_missing">Not found: %1$s</string>
     <string name="camera_features_error_title">Could not read the configuration</string>
     <string name="camera_features_product">ro.product.name = %1$s</string>
     <string name="camera_error_not_installed">The camera app (%1$s) is not installed</string>
