@@ -1,25 +1,41 @@
-name: Build APK
+name: Release APK
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    inputs:
+      version:
+        description: 'Версия в формате x.x.x (например 1.2.3)'
+        required: true
+        default: '1.0.0'
+      publish:
+        description: 'Опубликовать релиз с тегом v<версия>'
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Пометить релиз как предварительный'
+        type: boolean
+        default: false
 
 jobs:
-  build:
-    name: Release APK
+  release:
+    name: Release APK ${{ inputs.version }}
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      VERSION: ${{ inputs.version }}
 
     steps:
+      - name: Check version format
+        run: |
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Версия '$VERSION' не в формате x.x.x"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -52,11 +68,21 @@ jobs:
           VIVO_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VIVO_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           VIVO_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease --stacktrace -PvivoVersion="$VERSION"
 
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
-          name: vivo-tool-release
+          name: vivo-tool-${{ inputs.version }}
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+      - name: Publish release
+        if: inputs.publish
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          prerelease: ${{ inputs.prerelease }}
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true

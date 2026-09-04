@@ -1,6 +1,7 @@
 package com.skb8.vivotool.core
 
 import android.os.Build
+import androidx.annotation.StringRes
 import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement
@@ -20,7 +21,7 @@ import java.lang.reflect.Method
  * ```
  * object ExampleHook : BaseHook() {
  *     override val id = "example"
- *     override val title = "Пример хука"
+ *     override val titleRes = R.string.hook_example_title
  *     override val targetPackages = setOf("com.example.app")
  *
  *     override fun onHook() {
@@ -37,10 +38,12 @@ abstract class BaseHook {
     abstract val id: String
 
     /** Название хука для списка в приложении. */
-    abstract val title: String
+    @get:StringRes
+    abstract val titleRes: Int
 
-    /** Короткое описание того, что делает хук. */
-    open val description: String = ""
+    /** Короткое описание того, что делает хук, или 0, если его нет. */
+    @get:StringRes
+    open val descriptionRes: Int = 0
 
     /**
      * Пакеты приложений, в процессах которых нужно применить хук.
@@ -49,9 +52,6 @@ abstract class BaseHook {
      * [Constants.ALL_PACKAGES] — чтобы применять хук во всех процессах.
      */
     abstract val targetPackages: Set<String>
-
-    /** Категория для группировки в UI. */
-    open val category: String = "Общее"
 
     /** Включён ли хук, пока пользователь не изменил настройку. */
     open val enabledByDefault: Boolean = true

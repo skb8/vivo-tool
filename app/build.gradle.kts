@@ -95,8 +95,25 @@ val moduleScopePackages: Provider<List<String>> =
         }
         .orElse(emptyList())
 
-val appVersionName = "1.0.0"
-val appVersionCode = 1
+/**
+ * Версия сборки. По умолчанию `1` — этого достаточно для сборок из main;
+ * релизная версия передаётся ручным запуском: `-PvivoVersion=1.2.3`.
+ */
+val appVersionName: String = providers.gradleProperty("vivoVersion").orNull
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: "1"
+
+/** `1.2.3` → 10203, `1` → 1: код версии всегда растёт вместе с именем. */
+fun versionCodeOf(name: String): Int {
+    val parts = name.split('.').map { it.toIntOrNull() ?: 0 }
+    val major = parts.getOrElse(0) { 0 }
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+    return (major * 10000 + minor * 100 + patch).coerceAtLeast(1)
+}
+
+val appVersionCode = versionCodeOf(appVersionName)
 val hookEntryClass = "com.skb8.vivotool.core.HookEntry"
 
 val generateXposedMetadata = tasks.register<GenerateXposedMetadata>("generateXposedMetadata") {
@@ -110,7 +127,7 @@ val generateXposedMetadata = tasks.register<GenerateXposedMetadata>("generateXpo
     moduleVersion.set(appVersionName)
     moduleVersionCode.set(appVersionCode)
     moduleAuthor.set("skb8")
-    moduleDescription.set("Модульный набор хуков для прошивок Vivo (LSPosed)")
+    moduleDescription.set("A modular set of hooks for Vivo firmware (LSPosed)")
     minApi.set(93)
 
     resDir.set(layout.buildDirectory.dir("generated/xposed/res"))

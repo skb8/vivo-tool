@@ -17,10 +17,6 @@ object HookRegistry {
     fun hooksFor(packageName: String): List<BaseHook> =
         hooks.filter { it.matches(packageName) }
 
-    /** Хуки, сгруппированные по категории — для списка в приложении. */
-    fun byCategory(): Map<String, List<BaseHook>> =
-        hooks.groupBy { it.category }.toSortedMap()
-
     /** Все пакеты, упомянутые в хуках (кроме универсального `*`). */
     fun declaredPackages(): Set<String> =
         hooks.flatMap { it.targetPackages }

@@ -43,10 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skb8.vivotool.BuildConfig
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.HookRegistry
 import com.skb8.vivotool.core.ModuleScope
 import com.skb8.vivotool.core.ModuleStatus
@@ -69,7 +72,7 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Vivo Tool") },
+                title = { Text(stringResource(R.string.app_name)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
@@ -89,9 +92,8 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                 item {
                     NoticeCard(
                         icon = Icons.Rounded.WarningAmber,
-                        title = "Настройки недоступны хукам",
-                        text = "Не удалось открыть файл настроек в режиме world-readable. " +
-                            "Активируйте модуль в LSPosed и перезапустите приложение."
+                        title = stringResource(R.string.prefs_unavailable_title),
+                        text = stringResource(R.string.prefs_unavailable_text)
                     )
                 }
             }
@@ -100,17 +102,18 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                 item {
                     NoticeCard(
                         icon = Icons.Rounded.ErrorOutline,
-                        title = "Пакеты вне области действия",
-                        text = "Для этих приложений есть твики, но они не перечислены в " +
-                            "app/module-scope.txt, поэтому LSPosed не предложит их при выборе:\n" +
+                        title = stringResource(R.string.scope_missing_title),
+                        text = stringResource(
+                            R.string.scope_missing_text,
                             missingScope.joinToString("\n") { "• $it" }
+                        )
                     )
                 }
             }
 
             item {
                 Text(
-                    text = "Приложения",
+                    text = stringResource(R.string.apps_section),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -121,10 +124,8 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                 item {
                     NoticeCard(
                         icon = Icons.Rounded.Info,
-                        title = "Твиков пока нет",
-                        text = "Добавьте хук в hooks/HookModules.kt и пакет приложения в " +
-                            "app/module-scope.txt — приложение появится в этом списке. " +
-                            "Инструкция: docs/WRITING_HOOKS.md"
+                        title = stringResource(R.string.no_tweaks_title),
+                        text = stringResource(R.string.no_tweaks_text)
                     )
                 }
             } else if (apps.isEmpty()) {
@@ -189,9 +190,17 @@ private fun AppRow(app: TargetApp, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(2.dp))
+                val tweaks = pluralStringResource(
+                    R.plurals.tweak_count,
+                    app.hooks.size,
+                    app.hooks.size
+                )
                 Text(
-                    text = "${app.hooks.size} ${tweakWord(app.hooks.size)}" +
-                        if (app.installed) "" else " · не установлено",
+                    text = if (app.installed) {
+                        tweaks
+                    } else {
+                        stringResource(R.string.app_not_installed, tweaks)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -210,12 +219,6 @@ private fun AppRow(app: TargetApp, onClick: () -> Unit) {
             )
         }
     }
-}
-
-private fun tweakWord(count: Int): String = when {
-    count % 10 == 1 && count % 100 != 11 -> "твик"
-    count % 10 in 2..4 && count % 100 !in 12..14 -> "твика"
-    else -> "твиков"
 }
 
 @Composable
@@ -244,7 +247,9 @@ private fun StatusCard() {
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(
-                    text = if (active) "Модуль активен" else "Модуль не активирован",
+                    text = stringResource(
+                        if (active) R.string.module_active else R.string.module_inactive
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = content
@@ -252,9 +257,13 @@ private fun StatusCard() {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = if (active) {
-                        "${ModuleStatus.frameworkName()} · Xposed API v${ModuleStatus.xposedApiVersion()}"
+                        stringResource(
+                            R.string.module_active_details,
+                            ModuleStatus.frameworkName(),
+                            ModuleStatus.xposedApiVersion()
+                        )
                     } else {
-                        "Включите модуль в LSPosed и перезагрузите устройство"
+                        stringResource(R.string.module_inactive_hint)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = content.copy(alpha = 0.8f)
@@ -313,7 +322,11 @@ private fun Footer() {
         )
         Spacer(Modifier.width(6.dp))
         Text(
-            text = "v${BuildConfig.VERSION_NAME} · твиков: ${HookRegistry.hooks.size}",
+            text = stringResource(
+                R.string.footer_summary,
+                BuildConfig.VERSION_NAME,
+                HookRegistry.hooks.size
+            ),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.outline
         )

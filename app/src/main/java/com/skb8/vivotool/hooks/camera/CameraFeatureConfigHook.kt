@@ -1,6 +1,7 @@
 package com.skb8.vivotool.hooks.camera
 
 import android.os.Build
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
@@ -40,12 +41,9 @@ object CameraFeatureConfigHook : BaseHook() {
 
     override val id: String = ID
 
-    override val title: String = "Изменение доступных фич"
+    override val titleRes: Int = R.string.hook_camera_features_title
 
-    override val description: String =
-        "Принудительно включает или выключает фичи из FeatureConfig прошивки"
-
-    override val category: String = "Камера"
+    override val descriptionRes: Int = R.string.hook_camera_features_description
 
     override val targetPackages: Set<String> = setOf(CAMERA_PACKAGE)
 

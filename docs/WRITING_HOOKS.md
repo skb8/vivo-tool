@@ -8,14 +8,14 @@
 ```kotlin
 package com.skb8.vivotool.hooks.systemui
 
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 
 object StatusBarClockHook : BaseHook() {
 
     override val id = "systemui_clock_seconds"          // ключ настроек, менять нельзя
-    override val title = "Секунды в часах статусбара"
-    override val description = "Показывает секунды рядом со временем"
-    override val category = "SystemUI"                   // группа в списке приложения
+    override val titleRes = R.string.hook_clock_seconds_title
+    override val descriptionRes = R.string.hook_clock_seconds_description
     override val targetPackages = setOf("com.android.systemui")
     override val enabledByDefault = false
 
@@ -35,6 +35,10 @@ object StatusBarClockHook : BaseHook() {
 | `minSdk` / `maxSdk` | хук применяется только на нужных версиях Android |
 | `enabledByDefault` | включён ли хук до того, как пользователь что-то менял |
 | `onZygote(startupParam)` | хуки на стадии Zygote (ресурсы, системные классы) |
+
+Название и описание — строковые ресурсы: язык по умолчанию английский
+(`res/values/strings.xml`), русский перевод — в `res/values-ru/strings.xml`.
+Строку нужно завести в обоих файлах, иначе на русском покажется английский текст.
 
 Спецзначения для `targetPackages`:
 

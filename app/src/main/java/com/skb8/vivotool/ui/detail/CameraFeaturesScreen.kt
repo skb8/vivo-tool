@@ -1,5 +1,7 @@
 package com.skb8.vivotool.ui.detail
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.StopCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -42,19 +47,24 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.skb8.vivotool.R
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.settings.AppSettings
 import com.skb8.vivotool.settings.CameraFeature
 import com.skb8.vivotool.settings.CameraFeatureCatalog
 import com.skb8.vivotool.settings.CameraFeatureLoader
+import com.skb8.vivotool.ui.AppControl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -65,6 +75,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun CameraFeaturesScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings = remember { AppSettings(context) }
     val overrides = remember {
         mutableStateMapOf<String, Boolean>().apply {
@@ -73,29 +84,65 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
         }
     }
     var query by remember { mutableStateOf("") }
+    var confirmReset by remember { mutableStateOf(false) }
 
     val catalog by produceState<CameraFeatureCatalog?>(initialValue = null) {
         value = withContext(Dispatchers.IO) { CameraFeatureLoader.load(context) }
     }
 
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(stringResource(R.string.reset_features_title)) },
+            text = { Text(stringResource(R.string.reset_features_text, overrides.size)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        settings.removeWithPrefix(CameraFeatureConfigHook.KEY_PREFIX)
+                        overrides.clear()
+                        confirmReset = false
+                    }
+                ) {
+                    Text(stringResource(R.string.action_reset))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Фичи камеры") },
+                title = { Text(stringResource(R.string.camera_features_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Назад")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back)
+                        )
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            scope.launch { forceStopCamera(context) }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.StopCircle,
+                            contentDescription = stringResource(R.string.action_force_stop)
+                        )
+                    }
                     if (overrides.isNotEmpty()) {
-                        IconButton(
-                            onClick = {
-                                settings.removeWithPrefix(CameraFeatureConfigHook.KEY_PREFIX)
-                                overrides.clear()
-                            }
-                        ) {
-                            Icon(Icons.Rounded.RestartAlt, contentDescription = "Сбросить всё")
+                        IconButton(onClick = { confirmReset = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.RestartAlt,
+                                contentDescription = stringResource(R.string.action_reset_all)
+                            )
                         }
                     }
                 },
@@ -117,12 +164,15 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 singleLine = true,
-                placeholder = { Text("Поиск фичи") },
+                placeholder = { Text(stringResource(R.string.camera_features_search)) },
                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Очистить")
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.action_clear)
+                            )
                         }
                     }
                 }
@@ -165,7 +215,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                         if (visible.isEmpty()) {
                             item {
                                 Text(
-                                    text = "Ничего не найдено",
+                                    text = stringResource(R.string.camera_features_empty),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 24.dp)
@@ -196,6 +246,21 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
     }
 }
 
+private suspend fun forceStopCamera(context: Context) {
+    val packageName = CameraFeatureConfigHook.CAMERA_PACKAGE
+    val stopped = withContext(Dispatchers.IO) { AppControl.forceStop(packageName) }
+    if (stopped) {
+        Toast.makeText(
+            context,
+            context.getString(R.string.force_stop_done, packageName),
+            Toast.LENGTH_SHORT
+        ).show()
+    } else {
+        Toast.makeText(context, R.string.force_stop_failed, Toast.LENGTH_LONG).show()
+        AppControl.openAppInfo(context, packageName)
+    }
+}
+
 @Composable
 private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
     Card(
@@ -205,8 +270,15 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                text = "Фич найдено: ${catalog.features.size}" +
-                    if (changed > 0) " · изменено: $changed" else "",
+                text = if (changed > 0) {
+                    stringResource(
+                        R.string.camera_features_summary_changed,
+                        catalog.features.size,
+                        changed
+                    )
+                } else {
+                    stringResource(R.string.camera_features_summary, catalog.features.size)
+                },
                 style = MaterialTheme.typography.titleSmall
             )
             Spacer(Modifier.height(6.dp))
@@ -218,8 +290,7 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Значения читаются из прошивки. После изменения закройте камеру " +
-                    "(force stop) — переопределения применяются при её запуске.",
+                text = stringResource(R.string.camera_features_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -243,7 +314,7 @@ private fun ErrorCard(catalog: CameraFeatureCatalog) {
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "Не удалось прочитать конфигурацию",
+                    text = stringResource(R.string.camera_features_error_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -255,7 +326,7 @@ private fun ErrorCard(catalog: CameraFeatureCatalog) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "ro.product.name = ${catalog.product}",
+                    text = stringResource(R.string.camera_features_product, catalog.product),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onErrorContainer
@@ -295,7 +366,7 @@ private fun FeatureRow(
                 if (override != null) {
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "переопределено: $override",
+                        text = stringResource(R.string.feature_override, override.toString()),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -311,10 +382,13 @@ private fun FeatureRow(
 
             Box {
                 IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "Значение фичи")
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = stringResource(R.string.feature_value_menu)
+                    )
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    MenuChoice("По умолчанию", override == null) {
+                    MenuChoice(stringResource(R.string.feature_value_default), override == null) {
                         onSelect(null)
                         menuOpen = false
                     }
@@ -349,11 +423,14 @@ private fun MenuChoice(text: String, selected: Boolean, onClick: () -> Unit) {
     )
 }
 
+@Composable
 private fun defaultText(feature: CameraFeature): String = when {
-    feature.parameterized ->
-        "по умолчанию: зависит от аргументов" +
-            if (feature.overloads > 1) " · перегрузок: ${feature.overloads}" else ""
+    feature.parameterized && feature.overloads > 1 ->
+        stringResource(R.string.feature_default_args_overloads, feature.overloads)
 
-    feature.defaultValue != null -> "по умолчанию: ${feature.defaultValue}"
-    else -> "по умолчанию: не удалось определить"
+    feature.parameterized -> stringResource(R.string.feature_default_args)
+    feature.defaultValue != null ->
+        stringResource(R.string.feature_default_value, feature.defaultValue.toString())
+
+    else -> stringResource(R.string.feature_default_unknown)
 }

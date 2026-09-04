@@ -34,8 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.settings.AppSettings
@@ -67,7 +69,10 @@ fun AppHooksScreen(
                 title = { Text(app.label) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Назад")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -87,9 +92,8 @@ fun AppHooksScreen(
                 item {
                     NoticeCard(
                         icon = Icons.Rounded.RestartAlt,
-                        title = "Нужна перезагрузка",
-                        text = "Твики системного фреймворка включаются при запуске " +
-                            "system_server, поэтому после переключения перезагрузите устройство."
+                        title = stringResource(R.string.reboot_needed_title),
+                        text = stringResource(R.string.reboot_needed_text)
                     )
                 }
             }
@@ -132,14 +136,14 @@ private fun HookRow(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = hook.title,
+                        text = stringResource(hook.titleRes),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold
                     )
-                    if (hook.description.isNotBlank()) {
+                    if (hook.descriptionRes != 0) {
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = hook.description,
+                            text = stringResource(hook.descriptionRes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -147,7 +151,7 @@ private fun HookRow(
                     if (hasDetails) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Нажмите, чтобы настроить",
+                            text = stringResource(R.string.tap_to_configure),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )

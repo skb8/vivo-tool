@@ -1,5 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Vivo Tool</string>
-    <string name="module_description">Модульный набор хуков для прошивок Vivo/Funtouch OS. Хуки включаются по отдельности в приложении.</string>
+    <string name="app_name" translatable="false">Vivo Tool</string>
+    <string name="module_description">A modular set of hooks for Vivo/Funtouch OS firmware. Hooks are toggled individually inside the app.</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_reset_all">Reset all</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_force_stop">Force stop the app</string>
+
+    <!-- Apps list -->
+    <string name="apps_section">Applications</string>
+    <string name="module_active">Module is active</string>
+    <string name="module_inactive">Module is not active</string>
+    <string name="module_active_details">%1$s · Xposed API v%2$d</string>
+    <string name="module_inactive_hint">Enable the module in LSPosed and reboot the device</string>
+    <string name="prefs_unavailable_title">Settings are not readable by hooks</string>
+    <string name="prefs_unavailable_text">The settings file could not be opened in world-readable mode. Activate the module in LSPosed and restart the app.</string>
+    <string name="scope_missing_title">Packages outside the module scope</string>
+    <string name="scope_missing_text">These apps have tweaks but are missing from app/module-scope.txt, so LSPosed will not offer them:\n%1$s</string>
+    <string name="no_tweaks_title">No tweaks yet</string>
+    <string name="no_tweaks_text">Add a hook to hooks/HookModules.kt and the app package to app/module-scope.txt — the app will show up in this list. See docs/WRITING_HOOKS.md</string>
+    <plurals name="tweak_count">
+        <item quantity="one">%d tweak</item>
+        <item quantity="other">%d tweaks</item>
+    </plurals>
+    <string name="app_not_installed">%1$s · not installed</string>
+    <string name="footer_summary">v%1$s · tweaks: %2$d</string>
+    <string name="package_system_framework">System framework</string>
+    <string name="package_all_apps">All applications</string>
+
+    <!-- Tweaks of one app -->
+    <string name="reboot_needed_title">Reboot required</string>
+    <string name="reboot_needed_text">System framework tweaks are applied when system_server starts, so reboot the device after toggling them.</string>
+    <string name="tap_to_configure">Tap to configure</string>
+
+    <!-- Hooks -->
+    <string name="hook_about_phone_title">About phone image</string>
+    <string name="hook_about_phone_description">Your own picture instead of the stock one on the about phone card</string>
+    <string name="hook_camera_features_title">Available features</string>
+    <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
+
+    <!-- About phone image -->
+    <string name="about_phone_screen_title">About phone image</string>
+    <string name="about_phone_no_image">No picture selected — the stock one is shown</string>
+    <string name="action_pick_from_gallery">Pick from gallery</string>
+    <string name="action_replace">Replace</string>
+    <string name="how_it_works">How it works</string>
+    <string name="about_phone_help">The selected photo is cropped to %1$d×%2$d — the size of the original resource — and replaces it in Settings. To see the result, force stop Settings and open “About phone” again.</string>
+    <string name="resource_with_size">%1$s · ~%2$d KB</string>
+    <string name="image_saved">Done. Force stop Settings to see the picture</string>
+    <string name="image_save_failed">Could not save the picture</string>
+
+    <!-- Crop -->
+    <string name="crop_title">Crop to %1$d×%2$d</string>
+    <string name="crop_hint">One finger to move, two fingers or the slider to zoom. The card will show exactly what is inside the frame.</string>
+    <string name="crop_failed">Could not open the picture</string>
+
+    <!-- Camera features -->
+    <string name="camera_features_screen_title">Camera features</string>
+    <string name="camera_features_search">Search a feature</string>
+    <string name="camera_features_summary">Features found: %1$d</string>
+    <string name="camera_features_summary_changed">Features found: %1$d · changed: %2$d</string>
+    <string name="camera_features_hint">Values are read from the firmware. After changing them force stop the camera — overrides are applied when it starts.</string>
+    <string name="camera_features_empty">Nothing found</string>
+    <string name="camera_features_error_title">Could not read the configuration</string>
+    <string name="camera_features_product">ro.product.name = %1$s</string>
+    <string name="camera_error_not_installed">The camera app (%1$s) is not installed</string>
+    <string name="camera_error_apk">Could not read the camera APK: %1$s</string>
+    <string name="camera_error_class">Configuration class not found. Looked for: %1$s</string>
+    <string name="feature_default_value">default: %1$s</string>
+    <string name="feature_default_args">default: depends on the arguments</string>
+    <string name="feature_default_args_overloads">default: depends on the arguments · overloads: %1$d</string>
+    <string name="feature_default_unknown">default: could not be determined</string>
+    <string name="feature_override">overridden: %1$s</string>
+    <string name="feature_value_menu">Feature value</string>
+    <string name="feature_value_default">Default</string>
+    <string name="reset_features_title">Reset the features?</string>
+    <string name="reset_features_text">%1$d overridden features will go back to the firmware values.</string>
+    <string name="force_stop_done">%1$s has been stopped</string>
+    <string name="force_stop_failed">Could not force stop — opening the app info instead</string>
 </resources>

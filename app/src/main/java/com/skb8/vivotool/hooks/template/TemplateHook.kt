@@ -1,5 +1,6 @@
 package com.skb8.vivotool.hooks.template
 
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.XLog
 import com.skb8.vivotool.core.callMethod
@@ -11,20 +12,18 @@ import com.skb8.vivotool.core.getField
  * Этот объект НЕ зарегистрирован в `HookModules.all`, поэтому ничего не делает.
  *
  * После копирования:
- *  1. Смените [id] (он же ключ настроек) и [title].
- *  2. Укажите реальные пакеты в [targetPackages].
- *  3. Добавьте эти пакеты в `app/module-scope.txt`.
- *  4. Добавьте объект в `HookModules.all`.
+ *  1. Смените [id] (он же ключ настроек).
+ *  2. Заведите строки названия и описания в `res/values/strings.xml`
+ *     и `res/values-ru/strings.xml`, укажите их в [titleRes] и [descriptionRes].
+ *  3. Укажите реальные пакеты в [targetPackages].
+ *  4. Добавьте эти пакеты в `app/module-scope.txt`.
+ *  5. Добавьте объект в `HookModules.all`.
  */
 object TemplateHook : BaseHook() {
 
     override val id: String = "template"
 
-    override val title: String = "Шаблон хука"
-
-    override val description: String = "Ничего не делает, нужен как пример"
-
-    override val category: String = "Примеры"
+    override val titleRes: Int = R.string.app_name
 
     override val targetPackages: Set<String> = setOf("com.example.app")
 

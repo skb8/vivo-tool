@@ -4,6 +4,7 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.HookImages
 import com.skb8.vivotool.core.ImageKeys
@@ -45,13 +46,9 @@ object AboutPhoneRomImageHook : BaseHook() {
 
     override val id: String = ID
 
-    override val title: String = "Картинка в «О телефоне»"
+    override val titleRes: Int = R.string.hook_about_phone_title
 
-    override val description: String =
-        "Своё изображение вместо стандартного в карточке about phone " +
-            "($TARGET_WIDTH×$TARGET_HEIGHT)"
-
-    override val category: String = "Настройки"
+    override val descriptionRes: Int = R.string.hook_about_phone_description
 
     override val targetPackages: Set<String> = setOf(SETTINGS_PACKAGE)
 

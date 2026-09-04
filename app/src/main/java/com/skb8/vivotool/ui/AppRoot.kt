@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.ImageKeys
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
@@ -92,11 +93,7 @@ fun AppRoot() {
                 imageVersion++
                 Toast.makeText(
                     context,
-                    if (saved) {
-                        "Готово. Закройте «Настройки» (force stop), чтобы увидеть картинку"
-                    } else {
-                        "Не удалось сохранить картинку"
-                    },
+                    if (saved) R.string.image_saved else R.string.image_save_failed,
                     Toast.LENGTH_LONG
                 ).show()
             }

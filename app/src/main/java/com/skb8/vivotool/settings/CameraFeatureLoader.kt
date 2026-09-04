@@ -3,6 +3,7 @@ package com.skb8.vivotool.settings
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.XLog
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import dalvik.system.PathClassLoader
@@ -53,7 +54,10 @@ object CameraFeatureLoader {
                 product = product,
                 configClassName = null,
                 features = emptyList(),
-                error = "Приложение камеры (${CameraFeatureConfigHook.CAMERA_PACKAGE}) не найдено"
+                error = context.getString(
+                    R.string.camera_error_not_installed,
+                    CameraFeatureConfigHook.CAMERA_PACKAGE
+                )
             )
         }
 
@@ -65,7 +69,7 @@ object CameraFeatureLoader {
                 product = product,
                 configClassName = null,
                 features = emptyList(),
-                error = "Не удалось прочитать APK камеры: ${t.message}"
+                error = context.getString(R.string.camera_error_apk, t.message.orEmpty())
             )
         }
 
@@ -79,7 +83,7 @@ object CameraFeatureLoader {
             product = product,
             configClassName = null,
             features = emptyList(),
-            error = "Класс конфигурации не найден. Искали: ${candidates.joinToString()}"
+            error = context.getString(R.string.camera_error_class, candidates.joinToString())
         )
 
         val instance = try {

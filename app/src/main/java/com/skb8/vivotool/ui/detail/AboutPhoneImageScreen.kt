@@ -41,8 +41,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.ImageKeys
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 import com.skb8.vivotool.settings.ImageStore
@@ -67,10 +69,13 @@ fun AboutPhoneImageScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Картинка «О телефоне»") },
+                title = { Text(stringResource(R.string.about_phone_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Назад")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -114,7 +119,7 @@ fun AboutPhoneImageScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Картинка не выбрана — показывается стандартная",
+                        text = stringResource(R.string.about_phone_no_image),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -125,13 +130,21 @@ fun AboutPhoneImageScreen(
                 Button(onClick = onPickImage) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (preview != null) "Заменить" else "Выбрать из галереи")
+                    Text(
+                        stringResource(
+                            if (preview != null) {
+                                R.string.action_replace
+                            } else {
+                                R.string.action_pick_from_gallery
+                            }
+                        )
+                    )
                 }
                 if (preview != null) {
                     TextButton(onClick = onClearImage) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text("Сбросить")
+                        Text(stringResource(R.string.action_reset))
                     }
                 }
             }
@@ -143,24 +156,30 @@ fun AboutPhoneImageScreen(
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        text = "Как это работает",
+                        text = stringResource(R.string.how_it_works),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "Выбранное фото обрезается под " +
-                            "${AboutPhoneRomImageHook.TARGET_WIDTH}×" +
-                            "${AboutPhoneRomImageHook.TARGET_HEIGHT} — размер оригинального " +
-                            "ресурса, и подменяет его в приложении настроек. " +
-                            "Чтобы увидеть результат, закройте «Настройки» через " +
-                            "force stop и откройте раздел «О телефоне» заново.",
+                        text = stringResource(
+                            R.string.about_phone_help,
+                            AboutPhoneRomImageHook.TARGET_WIDTH,
+                            AboutPhoneRomImageHook.TARGET_HEIGHT
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = AboutPhoneRomImageHook.RESOURCE_NAME +
-                            if (preview != null) " · ~$sizeKb КБ" else "",
+                        text = if (preview != null) {
+                            stringResource(
+                                R.string.resource_with_size,
+                                AboutPhoneRomImageHook.RESOURCE_NAME,
+                                sizeKb
+                            )
+                        } else {
+                            AboutPhoneRomImageHook.RESOURCE_NAME
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.outline

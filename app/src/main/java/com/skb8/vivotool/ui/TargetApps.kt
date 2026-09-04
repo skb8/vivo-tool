@@ -3,6 +3,7 @@ package com.skb8.vivotool.ui
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.graphics.drawable.toBitmap
+import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.HookRegistry
@@ -24,8 +25,8 @@ object TargetApps {
 
     /** Понятные названия для пакетов, у которых системное имя ничего не говорит. */
     private val labelOverrides = mapOf(
-        Constants.SYSTEM_FRAMEWORK to "Системный фреймворк",
-        Constants.ALL_PACKAGES to "Все приложения"
+        Constants.SYSTEM_FRAMEWORK to R.string.package_system_framework,
+        Constants.ALL_PACKAGES to R.string.package_all_apps
     )
 
     fun load(context: Context): List<TargetApp> {
@@ -40,11 +41,11 @@ object TargetApps {
             val info = applicationInfo(context, packageName)
             TargetApp(
                 packageName = packageName,
-                label = labelOverrides[packageName]
+                label = labelOverrides[packageName]?.let { context.getString(it) }
                     ?: info?.let { context.packageManager.getApplicationLabel(it).toString() }
                     ?: packageName,
                 icon = loadIcon(context, packageName),
-                hooks = hooks.sortedBy { it.title },
+                hooks = hooks.sortedBy { context.getString(it.titleRes) },
                 installed = info != null || packageName == Constants.ALL_PACKAGES
             )
         }.sortedBy { it.label.lowercase() }

@@ -46,11 +46,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.skb8.vivotool.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -80,10 +82,13 @@ fun CropScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Обрезка $targetWidth×$targetHeight") },
+                title = { Text(stringResource(R.string.crop_title, targetWidth, targetHeight)) },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Отмена")
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.action_cancel)
+                        )
                     }
                 }
             )
@@ -100,7 +105,7 @@ fun CropScreen(
                 bitmap == null -> CircularProgressIndicator()
                 bitmap.width < 8 || bitmap.height < 8 ->
                     Text(
-                        text = "Картинку не удалось открыть",
+                        text = stringResource(R.string.crop_failed),
                         style = MaterialTheme.typography.bodyLarge
                     )
 
@@ -176,8 +181,7 @@ private fun CropContent(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Один палец — сдвиг, два пальца или ползунок — масштаб. " +
-                "В карточке появится ровно то, что видно в рамке.",
+            text = stringResource(R.string.crop_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -249,7 +253,7 @@ private fun CropContent(
                 modifier = Modifier.weight(1f),
                 enabled = !saving
             ) {
-                Text("Отмена")
+                Text(stringResource(R.string.action_cancel))
             }
             Button(
                 onClick = {
@@ -272,7 +276,7 @@ private fun CropContent(
                 modifier = Modifier.weight(1f),
                 enabled = !saving
             ) {
-                Text("Применить")
+                Text(stringResource(R.string.action_apply))
             }
         }
     }

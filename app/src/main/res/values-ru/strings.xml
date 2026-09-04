@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="module_description">Модульный набор хуков для прошивок Vivo/Funtouch OS. Хуки включаются по отдельности в приложении.</string>
+
+    <!-- Общие действия -->
+    <string name="action_back">Назад</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_apply">Применить</string>
+    <string name="action_reset">Сбросить</string>
+    <string name="action_reset_all">Сбросить всё</string>
+    <string name="action_clear">Очистить</string>
+    <string name="action_force_stop">Закрыть приложение (force stop)</string>
+
+    <!-- Список приложений -->
+    <string name="apps_section">Приложения</string>
+    <string name="module_active">Модуль активен</string>
+    <string name="module_inactive">Модуль не активирован</string>
+    <string name="module_active_details">%1$s · Xposed API v%2$d</string>
+    <string name="module_inactive_hint">Включите модуль в LSPosed и перезагрузите устройство</string>
+    <string name="prefs_unavailable_title">Настройки недоступны хукам</string>
+    <string name="prefs_unavailable_text">Не удалось открыть файл настроек в режиме world-readable. Активируйте модуль в LSPosed и перезапустите приложение.</string>
+    <string name="scope_missing_title">Пакеты вне области действия</string>
+    <string name="scope_missing_text">Для этих приложений есть твики, но они не перечислены в app/module-scope.txt, поэтому LSPosed не предложит их при выборе:\n%1$s</string>
+    <string name="no_tweaks_title">Твиков пока нет</string>
+    <string name="no_tweaks_text">Добавьте хук в hooks/HookModules.kt и пакет приложения в app/module-scope.txt — приложение появится в этом списке. Инструкция: docs/WRITING_HOOKS.md</string>
+    <plurals name="tweak_count">
+        <item quantity="one">%d твик</item>
+        <item quantity="few">%d твика</item>
+        <item quantity="many">%d твиков</item>
+        <item quantity="other">%d твика</item>
+    </plurals>
+    <string name="app_not_installed">%1$s · не установлено</string>
+    <string name="footer_summary">v%1$s · твиков: %2$d</string>
+    <string name="package_system_framework">Системный фреймворк</string>
+    <string name="package_all_apps">Все приложения</string>
+
+    <!-- Твики одного приложения -->
+    <string name="reboot_needed_title">Нужна перезагрузка</string>
+    <string name="reboot_needed_text">Твики системного фреймворка включаются при запуске system_server, поэтому после переключения перезагрузите устройство.</string>
+    <string name="tap_to_configure">Нажмите, чтобы настроить</string>
+
+    <!-- Хуки -->
+    <string name="hook_about_phone_title">Картинка в «О телефоне»</string>
+    <string name="hook_about_phone_description">Своё изображение вместо стандартного в карточке about phone</string>
+    <string name="hook_camera_features_title">Изменение доступных фич</string>
+    <string name="hook_camera_features_description">Принудительно включает или выключает фичи из FeatureConfig прошивки</string>
+
+    <!-- Картинка «О телефоне» -->
+    <string name="about_phone_screen_title">Картинка «О телефоне»</string>
+    <string name="about_phone_no_image">Картинка не выбрана — показывается стандартная</string>
+    <string name="action_pick_from_gallery">Выбрать из галереи</string>
+    <string name="action_replace">Заменить</string>
+    <string name="how_it_works">Как это работает</string>
+    <string name="about_phone_help">Выбранное фото обрезается под %1$d×%2$d — размер оригинального ресурса, и подменяет его в приложении настроек. Чтобы увидеть результат, закройте «Настройки» через force stop и откройте раздел «О телефоне» заново.</string>
+    <string name="resource_with_size">%1$s · ~%2$d КБ</string>
+    <string name="image_saved">Готово. Закройте «Настройки» (force stop), чтобы увидеть картинку</string>
+    <string name="image_save_failed">Не удалось сохранить картинку</string>
+
+    <!-- Обрезка -->
+    <string name="crop_title">Обрезка под %1$d×%2$d</string>
+    <string name="crop_hint">Один палец — сдвиг, два пальца или ползунок — масштаб. В карточке появится ровно то, что видно в рамке.</string>
+    <string name="crop_failed">Картинку не удалось открыть</string>
+
+    <!-- Фичи камеры -->
+    <string name="camera_features_screen_title">Фичи камеры</string>
+    <string name="camera_features_search">Поиск фичи</string>
+    <string name="camera_features_summary">Фич найдено: %1$d</string>
+    <string name="camera_features_summary_changed">Фич найдено: %1$d · изменено: %2$d</string>
+    <string name="camera_features_hint">Значения читаются из прошивки. После изменения закройте камеру (force stop) — переопределения применяются при её запуске.</string>
+    <string name="camera_features_empty">Ничего не найдено</string>
+    <string name="camera_features_error_title">Не удалось прочитать конфигурацию</string>
+    <string name="camera_features_product">ro.product.name = %1$s</string>
+    <string name="camera_error_not_installed">Приложение камеры (%1$s) не найдено</string>
+    <string name="camera_error_apk">Не удалось прочитать APK камеры: %1$s</string>
+    <string name="camera_error_class">Класс конфигурации не найден. Искали: %1$s</string>
+    <string name="feature_default_value">по умолчанию: %1$s</string>
+    <string name="feature_default_args">по умолчанию: зависит от аргументов</string>
+    <string name="feature_default_args_overloads">по умолчанию: зависит от аргументов · перегрузок: %1$d</string>
+    <string name="feature_default_unknown">по умолчанию: не удалось определить</string>
+    <string name="feature_override">переопределено: %1$s</string>
+    <string name="feature_value_menu">Значение фичи</string>
+    <string name="feature_value_default">По умолчанию</string>
+    <string name="reset_features_title">Сбросить фичи?</string>
+    <string name="reset_features_text">%1$d изменённых фич вернутся к значениям из прошивки.</string>
+    <string name="force_stop_done">%1$s закрыто</string>
+    <string name="force_stop_failed">Не удалось закрыть — открываю информацию о приложении</string>
+</resources>
