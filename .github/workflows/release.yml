@@ -7,22 +7,11 @@ on:
         description: 'Версия в формате x.x.x (например 1.2.3)'
         required: true
         default: '1.0.0'
-      publish:
-        description: 'Опубликовать релиз с тегом v<версия>'
-        type: boolean
-        default: true
-      prerelease:
-        description: 'Пометить релиз как предварительный'
-        type: boolean
-        default: false
 
 jobs:
   release:
     name: Release APK ${{ inputs.version }}
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
 
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -76,13 +65,3 @@ jobs:
           name: vivo-tool-${{ inputs.version }}
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
-
-      - name: Publish release
-        if: inputs.publish
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
-          prerelease: ${{ inputs.prerelease }}
-          files: app/build/outputs/apk/release/*.apk
-          generate_release_notes: true

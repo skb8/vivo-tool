@@ -67,6 +67,8 @@
     <string name="camera_features_summary_changed">Features found: %1$d · changed: %2$d</string>
     <string name="camera_features_hint">Values are read from the firmware. FeatureManager also depends on the platform, so some of its defaults cannot be determined outside the camera. After changing anything force stop the camera — overrides are applied when it starts.</string>
     <string name="camera_features_empty">Nothing found</string>
+    <string name="camera_features_filter_all">All (%1$d)</string>
+    <string name="camera_features_filter_source">%1$s (%2$d)</string>
     <string name="camera_features_source_missing">Not found: %1$s</string>
     <string name="camera_features_error_title">Could not read the configuration</string>
     <string name="camera_features_product">ro.product.name = %1$s</string>

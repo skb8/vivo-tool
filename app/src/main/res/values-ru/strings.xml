@@ -68,6 +68,8 @@
     <string name="camera_features_summary_changed">Фич найдено: %1$d · изменено: %2$d</string>
     <string name="camera_features_hint">Значения читаются из прошивки. FeatureManager зависит ещё и от платформы, поэтому часть его значений вне камеры определить нельзя. После изменения закройте камеру (force stop) — переопределения применяются при её запуске.</string>
     <string name="camera_features_empty">Ничего не найдено</string>
+    <string name="camera_features_filter_all">Все (%1$d)</string>
+    <string name="camera_features_filter_source">%1$s (%2$d)</string>
     <string name="camera_features_source_missing">Не найдено: %1$s</string>
     <string name="camera_features_error_title">Не удалось прочитать конфигурацию</string>
     <string name="camera_features_product">ro.product.name = %1$s</string>

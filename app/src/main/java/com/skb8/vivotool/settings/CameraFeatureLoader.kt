@@ -35,8 +35,8 @@ data class CameraFeature(
 /** Результат разбора конфигурации камеры. */
 data class CameraFeatureCatalog(
     val product: String,
-    /** Найденные классы с фичами. */
-    val classNames: List<String>,
+    /** Найденные классы с фичами — по источнику. */
+    val resolved: Map<Source, String>,
     /** Классы, которых в этой прошивке нет. */
     val notFound: List<String>,
     val features: List<CameraFeature>,
@@ -86,7 +86,7 @@ object CameraFeatureLoader {
             )
         }
 
-        val classNames = mutableListOf<String>()
+        val resolved = linkedMapOf<Source, String>()
         val notFound = mutableListOf<String>()
         val features = mutableListOf<CameraFeature>()
         val deadline = SystemClock.uptimeMillis() + PROBE_BUDGET_MS
@@ -104,11 +104,11 @@ object CameraFeatureLoader {
                 notFound += candidates.first().substringAfterLast('.')
                 return@forEach
             }
-            classNames += target.name
+            resolved[source] = target.name
             features += collectFeatures(source, target, instanceOf(target), deadline)
         }
 
-        if (classNames.isEmpty()) {
+        if (resolved.isEmpty()) {
             val candidates = Source.entries
                 .flatMap { CameraFeatureConfigHook.classCandidates(it, product) }
                 .joinToString()
@@ -117,7 +117,7 @@ object CameraFeatureLoader {
 
         return CameraFeatureCatalog(
             product = product,
-            classNames = classNames,
+            resolved = resolved,
             notFound = notFound,
             features = features.sortedWith(
                 compareBy({ it.name.lowercase() }, { it.source.ordinal })
@@ -128,7 +128,7 @@ object CameraFeatureLoader {
 
     private fun failure(product: String, error: String) = CameraFeatureCatalog(
         product = product,
-        classNames = emptyList(),
+        resolved = emptyMap(),
         notFound = emptyList(),
         features = emptyList(),
         error = error

@@ -1,5 +1,6 @@
 package com.skb8.vivotool.ui.detail
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
@@ -30,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -89,6 +92,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
         }
     }
     var query by remember { mutableStateOf("") }
+    var sourceFilter by remember { mutableStateOf<Source?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
 
     val catalog by produceState<CameraFeatureCatalog?>(initialValue = null) {
@@ -207,13 +211,19 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 }
 
                 else -> {
-                    val visible = remember(loaded, query) {
-                        if (query.isBlank()) {
-                            loaded.features
-                        } else {
-                            loaded.features.filter { it.name.contains(query.trim(), true) }
+                    val visible = remember(loaded, query, sourceFilter) {
+                        val trimmed = query.trim()
+                        loaded.features.filter { feature ->
+                            (sourceFilter == null || feature.source == sourceFilter) &&
+                                (trimmed.isEmpty() || feature.name.contains(trimmed, true))
                         }
                     }
+
+                    SourceFilterRow(
+                        catalog = loaded,
+                        selected = sourceFilter,
+                        onSelect = { sourceFilter = it }
+                    )
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -259,6 +269,52 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
     }
 }
 
+/** Фильтр по источнику фич: класс модели или FeatureManager. */
+@Composable
+private fun SourceFilterRow(
+    catalog: CameraFeatureCatalog,
+    selected: Source?,
+    onSelect: (Source?) -> Unit
+) {
+    if (catalog.resolved.size < 2) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterChip(
+            selected = selected == null,
+            onClick = { onSelect(null) },
+            label = {
+                Text(
+                    stringResource(
+                        R.string.camera_features_filter_all,
+                        catalog.features.size
+                    )
+                )
+            }
+        )
+        catalog.resolved.forEach { (source, className) ->
+            FilterChip(
+                selected = selected == source,
+                onClick = { onSelect(source) },
+                label = {
+                    Text(
+                        stringResource(
+                            R.string.camera_features_filter_source,
+                            className.substringAfterLast('.'),
+                            catalog.features.count { it.source == source }
+                        )
+                    )
+                }
+            )
+        }
+    }
+}
+
 @Composable
 private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
     Card(
@@ -280,7 +336,7 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
                 style = MaterialTheme.typography.titleSmall
             )
             Spacer(Modifier.height(6.dp))
-            catalog.classNames.forEach { className ->
+            catalog.resolved.values.forEach { className ->
                 Text(
                     text = className,
                     style = MaterialTheme.typography.labelSmall,

@@ -164,9 +164,9 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            // Модуль активно использует рефлексию из процессов чужих приложений,
-            // поэтому обфускация и шринкинг отключены.
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            // Ресурсов мало, а `@array/module_scope` и строки нужны хукам,
+            // поэтому шринкинг ресурсов не включаем — выгоды нет, риск есть.
             isShrinkResources = false
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
