@@ -213,6 +213,15 @@ abstract class BaseHook {
         }
     }
 
+    /**
+     * Подменяет уже найденный через рефлексию метод: он не выполняется,
+     * а сразу возвращает [value]. Удобно, когда метод нашли обходом иерархии.
+     */
+    protected fun Method.replaceWithConstant(value: Any?): XC_MethodHook.Unhook? =
+        safeHook("$declaringClass.$name") {
+            XposedBridge.hookMethod(this, XC_MethodReplacement.returnConstant(value))
+        }
+
     /** Значение, которое можно вернуть вместо вызова метода, не сломав вызывающий код. */
     protected fun neutralResult(member: Member?): Any? =
         when ((member as? Method)?.returnType) {

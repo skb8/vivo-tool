@@ -48,4 +48,22 @@ class AppSettings(context: Context) {
     fun setInt(key: String, value: Int) {
         prefs.edit().putInt(key, value).apply()
     }
+
+    fun remove(key: String) {
+        prefs.edit().remove(key).apply()
+    }
+
+    /** Все boolean-настройки с указанным префиксом. */
+    fun booleanEntriesWithPrefix(prefix: String): Map<String, Boolean> =
+        prefs.all
+            .filterKeys { it.startsWith(prefix) }
+            .mapNotNull { (key, value) -> (value as? Boolean)?.let { key to it } }
+            .toMap()
+
+    /** Удаляет все настройки с указанным префиксом. */
+    fun removeWithPrefix(prefix: String) {
+        val editor = prefs.edit()
+        prefs.all.keys.filter { it.startsWith(prefix) }.forEach { editor.remove(it) }
+        editor.apply()
+    }
 }

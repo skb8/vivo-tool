@@ -1,6 +1,7 @@
 package com.skb8.vivotool.hooks
 
 import com.skb8.vivotool.core.BaseHook
+import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 
 /**
@@ -21,5 +22,6 @@ object HookModules {
 
     val all: List<BaseHook> = listOf(
         AboutPhoneRomImageHook,
+        CameraFeatureConfigHook,
     )
 }

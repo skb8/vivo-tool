@@ -15,9 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.skb8.vivotool.core.ImageKeys
+import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 import com.skb8.vivotool.settings.ImageStore
 import com.skb8.vivotool.ui.detail.AboutPhoneImageScreen
+import com.skb8.vivotool.ui.detail.CameraFeaturesScreen
 
 /** Экраны приложения. */
 private sealed interface Route {
@@ -73,6 +75,8 @@ fun AppRoot() {
                     imageVersion++
                 }
             )
+
+            CameraFeatureConfigHook.ID -> CameraFeaturesScreen(onBack = ::pop)
 
             else -> LaunchedEffect(route.hookId) { pop() }
         }

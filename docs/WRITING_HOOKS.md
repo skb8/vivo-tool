@@ -177,6 +177,43 @@ HookImages.bytes(ImageKeys.MY_IMAGE)    // сырые байты для openRawR
 Экран обрезки (`ui/CropScreen.kt`) переиспользуемый: принимает точный размер
 ресурса и возвращает bitmap ровно этого размера.
 
+## Список значений в настройках
+
+Когда у твика не одно значение, а набор (как фичи камеры), удобно хранить их
+по префиксу ключа:
+
+```kotlin
+// приложение
+settings.setBoolean("camera_feature_isXxx", true)
+settings.booleanEntriesWithPrefix("camera_feature_")
+settings.removeWithPrefix("camera_feature_")
+
+// хук
+HookPrefs.entriesWithPrefix("camera_feature_")
+```
+
+## Чтение классов целевого приложения из UI
+
+APK системных приложений доступен на чтение, поэтому приложение может открыть
+его своим class loader'ом и посмотреть, что внутри — так собирается список фич
+камеры (`settings/CameraFeatureLoader.kt`):
+
+```kotlin
+val info = packageManager.getApplicationInfo(packageName, 0)
+val loader = PathClassLoader(info.sourceDir, info.nativeLibraryDir, javaClass.classLoader)
+val clazz = loader.loadClass("com.example.Config")
+```
+
+Дальше обычная рефлексия: обход иерархии через `declaredMethods` и `superclass`,
+вызов методов без аргументов, чтобы показать значения из прошивки. Каждый шаг
+оборачивайте в `try/catch`: часть классов может не разрешиться.
+
+Найденный через рефлексию метод подменяется в хуке напрямую:
+
+```kotlin
+method.replaceWithConstant(true)
+```
+
 ## Логи
 
 ```kotlin

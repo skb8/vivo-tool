@@ -38,4 +38,15 @@ internal object HookPrefs {
 
     fun getString(key: String, default: String): String =
         snapshot()?.getString(key, default) ?: default
+
+    /** Все настройки с указанным префиксом — для хуков со списком значений. */
+    fun entriesWithPrefix(prefix: String): Map<String, Any?> {
+        val store = snapshot() ?: return emptyMap()
+        return try {
+            store.all.filterKeys { it.startsWith(prefix) }
+        } catch (t: Throwable) {
+            XLog.e("Не удалось перечислить настройки с префиксом '$prefix'", t)
+            emptyMap()
+        }
+    }
 }
