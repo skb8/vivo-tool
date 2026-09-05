@@ -1,6 +1,7 @@
 package com.skb8.vivotool.ui
 
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
+import com.skb8.vivotool.hooks.camera.CameraZoomHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 
 /**
@@ -13,7 +14,8 @@ object HookDetails {
 
     private val withDetails = setOf(
         AboutPhoneRomImageHook.ID,
-        CameraFeatureConfigHook.ID
+        CameraFeatureConfigHook.ID,
+        CameraZoomHook.ID
     )
 
     fun hasDetails(hookId: String): Boolean = hookId in withDetails

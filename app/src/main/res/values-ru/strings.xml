@@ -44,6 +44,8 @@
     <string name="hook_about_phone_description">Своё изображение вместо стандартного в карточке about phone</string>
     <string name="hook_camera_features_title">Изменение доступных фич</string>
     <string name="hook_camera_features_description">Принудительно включает или выключает фичи из FeatureConfig прошивки</string>
+    <string name="hook_camera_zoom_title">Максимальный зум</string>
+    <string name="hook_camera_zoom_description">Снимает предел цифрового зума до 120x во всех режимах, включая видео</string>
 
     <!-- Картинка «О телефоне» -->
     <string name="about_phone_screen_title">Картинка «О телефоне»</string>
@@ -85,6 +87,17 @@
     <string name="feature_value_default">По умолчанию</string>
     <string name="reset_features_title">Сбросить фичи?</string>
     <string name="reset_features_text">%1$d изменённых фич вернутся к значениям из прошивки.</string>
+    <!-- Зум камеры -->
+    <string name="camera_zoom_screen_title">Максимальный зум</string>
+    <string name="camera_zoom_current">%1$sx во всех режимах</string>
+    <string name="camera_zoom_field_label">Максимальный зум, x</string>
+    <string name="camera_zoom_field_hint">От %1$s до %2$s</string>
+    <string name="camera_zoom_invalid">Введите число от %1$s до %2$s</string>
+    <string name="camera_zoom_preset">%1$sx</string>
+    <string name="camera_zoom_default">По умолчанию (%1$sx)</string>
+    <string name="camera_zoom_saved">Сохранено. Закройте камеру через force stop</string>
+    <string name="camera_zoom_help">Предел снимается сразу на всех уровнях: менеджеры зума режимов, лимиты записи в FeatureConfig, диапазон, который запрашивает UI зума, и зашитый предел линейки в 100x. Значение читается при старте камеры, поэтому после изменения закройте её через force stop. Всё, что выше оптики, — это кроп, так что чем больше значение, тем мягче картинка. На фронтальной камере предел остаётся стандартным.</string>
+
     <string name="force_stop_done">%1$s закрыто</string>
     <string name="force_stop_failed">Не удалось закрыть — открываю информацию о приложении</string>
 </resources>

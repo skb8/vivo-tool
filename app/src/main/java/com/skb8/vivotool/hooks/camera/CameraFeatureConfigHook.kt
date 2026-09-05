@@ -6,7 +6,6 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
 import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 
 /**
  * Подмена доступных фич камеры.
@@ -32,7 +31,8 @@ object CameraFeatureConfigHook : BaseHook() {
     /** Пакет приложения камеры. */
     const val CAMERA_PACKAGE = "com.android.camera"
 
-    private const val CONFIG_PACKAGE = "com.android.camera.featureconfig"
+    /** Пакет с классами конфигурации камеры. */
+    const val CONFIG_PACKAGE = "com.android.camera.featureconfig"
 
     private const val BASE_CONFIG_CLASS =
         "com.android.camera.featureconfig.configuration.loader.FeatureConfig_MEAT"
@@ -126,31 +126,6 @@ object CameraFeatureConfigHook : BaseHook() {
      * фича может быть объявлена и в классе модели, и в базовом конфиге,
      * а вызвана через `super`, поэтому подменяем каждую.
      */
-    private fun booleanMethods(target: Class<*>, name: String): List<Method> {
-        val found = mutableListOf<Method>()
-        var next: Class<*>? = target
-        while (true) {
-            val clazz = next ?: break
-            if (clazz == Any::class.java) break
-
-            val declared = try {
-                clazz.declaredMethods
-            } catch (t: Throwable) {
-                XLog.e("[$id] не удалось прочитать методы ${clazz.name}", t)
-                emptyArray()
-            }
-            declared.filterTo(found) { method ->
-                method.name == name &&
-                    method.returnType == Boolean::class.javaPrimitiveType &&
-                    !Modifier.isAbstract(method.modifiers)
-            }
-
-            next = try {
-                clazz.superclass
-            } catch (t: Throwable) {
-                null
-            }
-        }
-        return found
-    }
+    private fun booleanMethods(target: Class<*>, name: String): List<Method> =
+        target.methodsInHierarchy(name, Boolean::class.javaPrimitiveType)
 }

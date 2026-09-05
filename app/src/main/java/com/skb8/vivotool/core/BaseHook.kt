@@ -8,8 +8,10 @@ import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import java.lang.reflect.Field
 import java.lang.reflect.Member
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 /**
  * Базовый класс для всех хуков.
@@ -118,6 +120,48 @@ abstract class BaseHook {
     protected fun findFirstClass(vararg classNames: String, loader: ClassLoader = classLoader): Class<*>? =
         classNames.firstNotNullOfOrNull { XposedHelpers.findClassIfExists(it, loader) }
 
+    /** Поле класса или его родителей, готовое к чтению и записи, или null. */
+    protected fun Class<*>.findFieldOrNull(name: String): Field? =
+        XposedHelpers.findFieldIfExists(this, name)
+
+    /**
+     * Все неабстрактные реализации метода во всей иерархии класса.
+     *
+     * Нужно, когда неизвестно, в каком классе прошивки метод объявлен, или когда
+     * он переопределён и вызывается через `super`: тогда подменять нужно каждую
+     * реализацию. `hookAll*` так не умеет — он видит только объявленные в классе.
+     */
+    protected fun Class<*>.methodsInHierarchy(
+        name: String,
+        returnType: Class<*>? = null
+    ): List<Method> {
+        val found = mutableListOf<Method>()
+        var next: Class<*>? = this
+        while (true) {
+            val clazz = next ?: break
+            if (clazz == Any::class.java) break
+
+            val declared = try {
+                clazz.declaredMethods
+            } catch (t: Throwable) {
+                XLog.e("[$id] не удалось прочитать методы ${clazz.name}", t)
+                emptyArray()
+            }
+            declared.filterTo(found) { method ->
+                method.name == name &&
+                    (returnType == null || method.returnType == returnType) &&
+                    !Modifier.isAbstract(method.modifiers)
+            }
+
+            next = try {
+                clazz.superclass
+            } catch (t: Throwable) {
+                null
+            }
+        }
+        return found
+    }
+
     // ---------------------------------------------------------------------
     // Хуки методов
     // ---------------------------------------------------------------------
@@ -221,6 +265,13 @@ abstract class BaseHook {
         safeHook("$declaringClass.$name") {
             XposedBridge.hookMethod(this, XC_MethodReplacement.returnConstant(value))
         }
+
+    /** Хук после выполнения уже найденного через рефлексию метода. */
+    protected fun Method.hookAfter(
+        action: (XC_MethodHook.MethodHookParam) -> Unit
+    ): XC_MethodHook.Unhook? = safeHook("$declaringClass.$name") {
+        XposedBridge.hookMethod(this, afterCallback(action))
+    }
 
     /** Значение, которое можно вернуть вместо вызова метода, не сломав вызывающий код. */
     protected fun neutralResult(member: Member?): Any? =

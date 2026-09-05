@@ -43,6 +43,8 @@
     <string name="hook_about_phone_description">Your own picture instead of the stock one on the about phone card</string>
     <string name="hook_camera_features_title">Available features</string>
     <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
+    <string name="hook_camera_zoom_title">Maximum zoom</string>
+    <string name="hook_camera_zoom_description">Unlocks 120x digital zoom in every mode, video included</string>
 
     <!-- About phone image -->
     <string name="about_phone_screen_title">About phone image</string>
@@ -84,6 +86,17 @@
     <string name="feature_value_default">Default</string>
     <string name="reset_features_title">Reset the features?</string>
     <string name="reset_features_text">%1$d overridden features will go back to the firmware values.</string>
+    <!-- Camera zoom -->
+    <string name="camera_zoom_screen_title">Maximum zoom</string>
+    <string name="camera_zoom_current">%1$sx in every mode</string>
+    <string name="camera_zoom_field_label">Maximum zoom, x</string>
+    <string name="camera_zoom_field_hint">From %1$s to %2$s</string>
+    <string name="camera_zoom_invalid">Enter a number from %1$s to %2$s</string>
+    <string name="camera_zoom_preset">%1$sx</string>
+    <string name="camera_zoom_default">Default (%1$sx)</string>
+    <string name="camera_zoom_saved">Saved. Force stop the camera to apply</string>
+    <string name="camera_zoom_help">The cap is lifted on every level at once: the zoom managers of the modes, the recording limits in FeatureConfig, the range the zoom UI asks for and the hardcoded 100x limit of the zoom ruler. The value is read when the camera starts, so force stop it after changing anything. Everything above the optical range is a crop, so the higher the value the softer the picture. The front camera keeps the stock limit.</string>
+
     <string name="force_stop_done">%1$s has been stopped</string>
     <string name="force_stop_failed">Could not force stop — opening the app info instead</string>
 </resources>

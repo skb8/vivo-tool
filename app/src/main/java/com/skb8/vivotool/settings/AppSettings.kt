@@ -49,6 +49,12 @@ class AppSettings(context: Context) {
         prefs.edit().putInt(key, value).apply()
     }
 
+    fun getFloat(key: String, default: Float): Float = prefs.getFloat(key, default)
+
+    fun setFloat(key: String, value: Float) {
+        prefs.edit().putFloat(key, value).apply()
+    }
+
     fun remove(key: String) {
         prefs.edit().remove(key).apply()
     }
