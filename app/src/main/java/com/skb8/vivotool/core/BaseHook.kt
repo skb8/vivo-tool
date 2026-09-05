@@ -8,7 +8,6 @@ import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import java.lang.reflect.Field
 import java.lang.reflect.Member
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -119,10 +118,6 @@ abstract class BaseHook {
     /** Первый существующий класс из списка — удобно для разных версий прошивки. */
     protected fun findFirstClass(vararg classNames: String, loader: ClassLoader = classLoader): Class<*>? =
         classNames.firstNotNullOfOrNull { XposedHelpers.findClassIfExists(it, loader) }
-
-    /** Поле класса или его родителей, готовое к чтению и записи, или null. */
-    protected fun Class<*>.findFieldOrNull(name: String): Field? =
-        XposedHelpers.findFieldIfExists(this, name)
 
     /**
      * Все неабстрактные реализации метода во всей иерархии класса.
@@ -266,11 +261,27 @@ abstract class BaseHook {
             XposedBridge.hookMethod(this, XC_MethodReplacement.returnConstant(value))
         }
 
-    /** Хук после выполнения уже найденного через рефлексию метода. */
-    protected fun Method.hookAfter(
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): XC_MethodHook.Unhook? = safeHook("$declaringClass.$name") {
-        XposedBridge.hookMethod(this, afterCallback(action))
+    // ---------------------------------------------------------------------
+    // Чтение объектов целевого приложения
+    // ---------------------------------------------------------------------
+
+    /** Значение поля объекта или null, если поля нет. */
+    protected fun Any.fieldOrNull(name: String): Any? = try {
+        XposedHelpers.getObjectField(this, name)
+    } catch (t: Throwable) {
+        XLog.d("[$id] нет поля $name в ${javaClass.name}: ${t.message}")
+        null
+    }
+
+    /**
+     * Результат вызова метода объекта или null, если метода нет или он упал.
+     * Приватные методы тоже вызываются.
+     */
+    protected fun Any.callOrNull(name: String, vararg args: Any?): Any? = try {
+        XposedHelpers.callMethod(this, name, *args)
+    } catch (t: Throwable) {
+        XLog.d("[$id] вызов $name у ${javaClass.name} не удался: ${t.message}")
+        null
     }
 
     /** Значение, которое можно вернуть вместо вызова метода, не сломав вызывающий код. */

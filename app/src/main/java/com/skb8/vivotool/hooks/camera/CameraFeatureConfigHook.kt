@@ -31,8 +31,7 @@ object CameraFeatureConfigHook : BaseHook() {
     /** Пакет приложения камеры. */
     const val CAMERA_PACKAGE = "com.android.camera"
 
-    /** Пакет с классами конфигурации камеры. */
-    const val CONFIG_PACKAGE = "com.android.camera.featureconfig"
+    private const val CONFIG_PACKAGE = "com.android.camera.featureconfig"
 
     private const val BASE_CONFIG_CLASS =
         "com.android.camera.featureconfig.configuration.loader.FeatureConfig_MEAT"

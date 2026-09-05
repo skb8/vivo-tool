@@ -36,9 +36,6 @@ internal object HookPrefs {
     fun getInt(key: String, default: Int): Int =
         snapshot()?.getInt(key, default) ?: default
 
-    fun getFloat(key: String, default: Float): Float =
-        snapshot()?.getFloat(key, default) ?: default
-
     fun getString(key: String, default: String): String =
         snapshot()?.getString(key, default) ?: default
 

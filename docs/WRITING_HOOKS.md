@@ -80,8 +80,7 @@ findClass("com.example.Foo")                       // бросит исключ�
 findClassOrNull("com.example.Foo")                 // null, если нет
 findFirstClass("com.example.FooV2", "com.example.Foo")  // первый существующий
 
-// Поиск членов класса рефлексией
-clazz.findFieldOrNull("mMaxNumber")                // поле класса или родителя
+// Поиск методов рефлексией
 clazz.methodsInHierarchy("isVip")                  // все реализации в иерархии
 clazz.methodsInHierarchy("isVip", Boolean::class.javaPrimitiveType)
 
@@ -97,6 +96,10 @@ clazz.replaceAll("method") { null }
 clazz.hookConstructorBefore(Context::class.java) { }
 clazz.hookConstructorAfter { }
 clazz.hookAllConstructorsAfter { }
+
+// Чтение объектов целевого приложения
+obj.fieldOrNull("cameraTypeZoomRange")             // null, если поля нет
+obj.callOrNull("getZoomRange", moduleId)           // null, если метода нет
 
 // Контекст приложения
 afterApplicationCreated { app -> /* app: Application */ }
@@ -221,12 +224,11 @@ val clazz = loader.loadClass("com.example.Config")
 
 ```kotlin
 method.replaceWithConstant(true)
-method.hookAfter { param -> param.result = 120f }
 ```
 
-Так же работает и внутри хука: `methodsInHierarchy("configZoomRange")` находит
-все реализации метода, включая объявленные в родителях, — `hookAll*` видит
-только объявленные в самом классе, поэтому переопределения он пропускает.
+Так же работает и внутри хука: `methodsInHierarchy("isVip")` находит все
+реализации метода, включая объявленные в родителях, — `hookAll*` видит только
+объявленные в самом классе, поэтому переопределения он пропускает.
 
 ## Логи
 
