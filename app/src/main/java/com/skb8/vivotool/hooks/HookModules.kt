@@ -2,6 +2,7 @@ package com.skb8.vivotool.hooks
 
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
+import com.skb8.vivotool.hooks.camera.CameraHorizonEisHook
 import com.skb8.vivotool.hooks.camera.CameraZeissLogoHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 
@@ -25,5 +26,6 @@ object HookModules {
         AboutPhoneRomImageHook,
         CameraFeatureConfigHook,
         CameraZeissLogoHook,
+        CameraHorizonEisHook,
     )
 }

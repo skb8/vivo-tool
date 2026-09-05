@@ -44,6 +44,8 @@
     <string name="hook_about_phone_description">Своё изображение вместо стандартного в карточке about phone</string>
     <string name="hook_camera_features_title">Изменение доступных фич</string>
     <string name="hook_camera_features_description">Принудительно включает или выключает фичи из FeatureConfig прошивки</string>
+    <string name="hook_camera_horizon_eis_title">Стабилизация по горизонту</string>
+    <string name="hook_camera_horizon_eis_description">Режим «Ультра» в видео запускает стабилизацию с выравниванием горизонта. Экспериментально: прошивка этот режим не предлагает</string>
     <string name="hook_camera_zeiss_logo_title">Логотип Zeiss в рамке</string>
     <string name="hook_camera_zeiss_logo_description">Прошивка вырезает логотип на Y- и T-серии. Включите водяной знак-рамку в камере, чтобы увидеть</string>
     <!-- Картинка «О телефоне» -->

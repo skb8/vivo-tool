@@ -43,6 +43,8 @@
     <string name="hook_about_phone_description">Your own picture instead of the stock one on the about phone card</string>
     <string name="hook_camera_features_title">Available features</string>
     <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
+    <string name="hook_camera_horizon_eis_title">Horizon stabilization</string>
+    <string name="hook_camera_horizon_eis_description">Ultra stabilization in video runs the horizon-levelling mode instead. Experimental: the firmware does not offer this mode</string>
     <string name="hook_camera_zeiss_logo_title">Zeiss logo in the frame watermark</string>
     <string name="hook_camera_zeiss_logo_description">The firmware cuts the logo out on the Y and T series. Turn on the frame watermark in the camera to see it</string>
     <!-- About phone image -->
