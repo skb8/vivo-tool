@@ -43,8 +43,8 @@
     <string name="hook_about_phone_description">Your own picture instead of the stock one on the about phone card</string>
     <string name="hook_camera_features_title">Available features</string>
     <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
-    <string name="hook_camera_zoom_title">100x zoom in every mode</string>
-    <string name="hook_camera_zoom_description">Video and the other modes get the same zoom limit as photo. Force stop the camera to apply</string>
+    <string name="hook_camera_zoom_title">One zoom limit for every mode</string>
+    <string name="hook_camera_zoom_description">Video and the other modes get the same maximum zoom as photo. Force stop the camera to apply</string>
 
     <!-- About phone image -->
     <string name="about_phone_screen_title">About phone image</string>

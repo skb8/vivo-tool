@@ -92,7 +92,9 @@ object CameraZoomHook : BaseHook() {
         val seen = "$moduleId/$cameraType $lower..$upper (свой $own, фото $photo)"
 
         if (ceiling <= upper || lower >= ceiling) {
-            XLog.i("[$id] $seen: без изменений")
+            // Режим уже на своём максимуме — в журнал Xposed это не пишем,
+            // иначе каждое переключение режима засоряет его.
+            XLog.d("[$id] $seen: без изменений")
             return
         }
 
