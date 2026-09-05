@@ -44,9 +44,6 @@
     <string name="hook_about_phone_description">Своё изображение вместо стандартного в карточке about phone</string>
     <string name="hook_camera_features_title">Изменение доступных фич</string>
     <string name="hook_camera_features_description">Принудительно включает или выключает фичи из FeatureConfig прошивки</string>
-    <string name="hook_camera_zoom_title">Единый предел зума</string>
-    <string name="hook_camera_zoom_description">Видео и остальные режимы получают тот же максимум зума, что и фото. Изменения применяются после закрытия камеры</string>
-
     <!-- Картинка «О телефоне» -->
     <string name="about_phone_screen_title">Картинка «О телефоне»</string>
     <string name="about_phone_no_image">Картинка не выбрана — показывается стандартная</string>
