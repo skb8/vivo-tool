@@ -44,7 +44,7 @@
     <string name="hook_camera_features_title">Available features</string>
     <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
     <string name="hook_camera_horizon_eis_title">Horizon stabilization</string>
-    <string name="hook_camera_horizon_eis_description">Ultra stabilization in video runs the horizon-levelling mode instead. Experimental: the firmware does not offer this mode</string>
+    <string name="hook_camera_horizon_eis_description">Standard stabilization in video runs the horizon-levelling mode on the main camera. Experimental: the firmware does not offer this mode</string>
     <string name="hook_camera_zeiss_title">Zeiss features</string>
     <string name="hook_camera_zeiss_description">The logo in the frame watermark, the T* colour button and the portrait formulas. The tweak sets the feature flags itself</string>
     <!-- About phone image -->

@@ -16,8 +16,14 @@ import com.skb8.vivotool.core.XLog
  *
  * Список значений в настройках собирается под модель, и «3» в него не
  * попадает — выбрать режим руками нельзя. Хук подменяет прочитанное значение:
- * выбранная «ультра» отдаётся коду как «горизонт». Так соглашаются все, кто
- * спрашивает настройку: и EIS, и кнопка направления съёмки.
+ * выбранная «стандартная» отдаётся коду как «горизонт». Так соглашаются все,
+ * кто спрашивает настройку: и EIS, и кнопка направления съёмки.
+ *
+ * Носителем выбрана именно «стандартная», а не «ультра»: ультра-стабилизация
+ * на этой модели снимает с широкоугольного объектива, а стандартная — с
+ * основного. Правило mutex читает `ListPreference` напрямую, минуя подмену,
+ * поэтому выбор камеры и диапазон зума остаются от стандартного режима, то
+ * есть с основной камеры. «Ультра» при этом работает как раньше.
  *
  * Вместе с режимом приложение показывает обучающую подсказку с видео
  * `R.raw.horizon_tip`, а в ресурсах этой прошивки такого файла нет — сборка
@@ -43,7 +49,8 @@ object CameraHorizonEisHook : BaseHook() {
     /** `ISettingKeys.KEY_VIDEO_STABLE`. */
     private const val STABLE_KEY = "pref_video_super_stable"
 
-    private const val ULTRA_VALUE = "1"
+    /** «Стандартная» стабилизация — она снимает с основной камеры. */
+    private const val NORMAL_VALUE = "2"
     private const val HORIZON_VALUE = "3"
 
     override val id: String = ID
@@ -71,13 +78,13 @@ object CameraHorizonEisHook : BaseHook() {
 
         val hooks = clazz.hookAllAfter("getSettingValueFromKey") { param ->
             if (param.args?.getOrNull(0) != STABLE_KEY) return@hookAllAfter
-            if (param.result != ULTRA_VALUE) return@hookAllAfter
+            if (param.result != NORMAL_VALUE) return@hookAllAfter
 
             param.result = HORIZON_VALUE
             // Метод горячий, поэтому в журнал пишем только первую подмену.
             if (!reported) {
                 reported = true
-                XLog.i("[$id] ультра-стабилизация отдаётся как режим горизонта")
+                XLog.i("[$id] стандартная стабилизация отдаётся как режим горизонта")
             }
         }
         if (hooks.isEmpty()) {

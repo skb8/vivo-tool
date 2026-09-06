@@ -45,7 +45,7 @@
     <string name="hook_camera_features_title">Изменение доступных фич</string>
     <string name="hook_camera_features_description">Принудительно включает или выключает фичи из FeatureConfig прошивки</string>
     <string name="hook_camera_horizon_eis_title">Стабилизация по горизонту</string>
-    <string name="hook_camera_horizon_eis_description">Режим «Ультра» в видео запускает стабилизацию с выравниванием горизонта. Экспериментально: прошивка этот режим не предлагает</string>
+    <string name="hook_camera_horizon_eis_description">Режим «Стандартная» в видео запускает выравнивание горизонта с основной камеры. Экспериментально: прошивка этот режим не предлагает</string>
     <string name="hook_camera_zeiss_title">Возможности Zeiss</string>
     <string name="hook_camera_zeiss_description">Логотип в водяном знаке-рамке, кнопка цвета T* и формулы портрета. Нужные фичи твик включает сам</string>
     <!-- Картинка «О телефоне» -->
