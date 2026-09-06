@@ -23,7 +23,9 @@ object ImageStore {
 
     @Suppress("DEPRECATION", "WorldReadableFiles")
     private fun prefs(context: Context): SharedPreferences = try {
-        context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_WORLD_READABLE)
+        context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_WORLD_READABLE).also {
+            WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
+        }
     } catch (t: Throwable) {
         XLog.w("Хранилище картинок недоступно хукам: ${t.message}")
         context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_PRIVATE)

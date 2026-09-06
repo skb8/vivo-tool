@@ -43,6 +43,7 @@ import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.settings.AppSettings
+import com.skb8.vivotool.settings.RequiredFeatures
 import kotlinx.coroutines.launch
 
 /**
@@ -131,6 +132,7 @@ fun AppHooksScreen(
                     onToggle = { value ->
                         enabledState[hook.id] = value
                         settings.setEnabled(hook, value)
+                        RequiredFeatures.apply(settings, hook, value)
                     },
                     onOpenDetails = { onOpenHook(hook) }
                 )

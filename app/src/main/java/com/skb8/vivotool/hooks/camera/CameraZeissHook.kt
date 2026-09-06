@@ -5,10 +5,18 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.XLog
 
 /**
- * Логотип Zeiss в водяном знаке-рамке.
+ * Возможности Zeiss, отключённые для этой модели.
  *
- * Сама рамка на этой прошивке поддерживается (`isSupportWatermarkBorder()`
- * возвращает true), но логотип из неё вырезан по серии устройства —
+ * Три вещи включаются флагами `FeatureConfig` — их твик выставляет сам, через
+ * те же настройки, что и «Изменение доступных фич» (см. [REQUIRED_FEATURES]):
+ *  - `isSupportZeissColor` — кнопка цвета T*. Гейт в `PhotoSettingSupport`:
+ *    `isSupportZeissColor(isFront) && !isSupportColorfulButton(isFront, module)`,
+ *    поэтому вторым флагом кнопку «живого» цвета приходится выключать;
+ *  - `isSupportPortraitFormulaConfig` — формулы портрета Biotar, Distagon,
+ *    Planar и Sonnar (`KEY_PORTRAIT_FORMULA`).
+ *
+ * Логотип в водяном знаке-рамке флагами не включается. Рамка поддерживается
+ * (`isSupportWatermarkBorder()` возвращает true), но
  * `WatermarkFrameLogo.provideLogoOrSpecialIcon` начинается с:
  *
  * ```java
@@ -19,16 +27,25 @@ import com.skb8.vivotool.core.XLog
  *
  * Там же по этим проверкам скрывается разделительная линия рядом с логотипом.
  * Серия читается из системного свойства `vivo.product.series` и из
- * `FeatureConfig.productSeries()`, то есть значением-строкой — фичами из
- * FeatureConfig это не переключить.
+ * `FeatureConfig.productSeries()`, то есть значением-строкой.
  *
  * Хук отвечает «не Y и не T» только тогда, когда спрашивает код водяного
  * знака: [DEVICE_UTIL_CLASS] используется по всему приложению для вёрстки и
  * набора функций, и врать всем подряд — это чужие поломки.
  */
-object CameraZeissLogoHook : BaseHook() {
+object CameraZeissHook : BaseHook() {
 
-    const val ID = "camera_zeiss_logo"
+    const val ID = "camera_zeiss"
+
+    /**
+     * Фичи `FeatureConfig`, без которых кнопки Zeiss не появятся.
+     * Приложение выставляет их при включении твика и убирает при выключении.
+     */
+    val REQUIRED_FEATURES: Map<String, Boolean> = mapOf(
+        "isSupportZeissColor" to true,
+        "isSupportColorfulButton" to false,
+        "isSupportPortraitFormulaConfig" to true
+    )
 
     private const val DEVICE_UTIL_CLASS = "com.android.camera.utils.DeviceUtil"
 
@@ -40,9 +57,9 @@ object CameraZeissLogoHook : BaseHook() {
 
     override val id: String = ID
 
-    override val titleRes: Int = R.string.hook_camera_zeiss_logo_title
+    override val titleRes: Int = R.string.hook_camera_zeiss_title
 
-    override val descriptionRes: Int = R.string.hook_camera_zeiss_logo_description
+    override val descriptionRes: Int = R.string.hook_camera_zeiss_description
 
     override val targetPackages: Set<String> = setOf(CameraFeatureConfigHook.CAMERA_PACKAGE)
 

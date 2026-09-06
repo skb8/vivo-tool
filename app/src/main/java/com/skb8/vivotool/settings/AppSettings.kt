@@ -27,6 +27,10 @@ class AppSettings(context: Context) {
         context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    init {
+        if (shared) WorldReadable.fix(context, Constants.PREFS_NAME)
+    }
+
     /** Видны ли настройки процессам с хуками. */
     val isSharedWithHooks: Boolean get() = shared
 

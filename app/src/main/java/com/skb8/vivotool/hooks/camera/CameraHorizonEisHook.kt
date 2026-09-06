@@ -19,6 +19,12 @@ import com.skb8.vivotool.core.XLog
  * выбранная «ультра» отдаётся коду как «горизонт». Так соглашаются все, кто
  * спрашивает настройку: и EIS, и кнопка направления съёмки.
  *
+ * Вместе с режимом приложение показывает обучающую подсказку с видео
+ * `R.raw.horizon_tip`, а в ресурсах этой прошивки такого файла нет — сборка
+ * его выкинула вместе с неподдерживаемым режимом. Поэтому создание подсказки
+ * приходится отключать, иначе камера падает с `NoSuchFieldError` на первом
+ * кадре превью (см. [MODULE_UI_CLASS]).
+ *
  * Экспериментально: сам алгоритм живёт в HAL, и если для этой модели режима
  * 10 там нет, съёмка может не запуститься — тогда твик надо выключить.
  */
@@ -27,6 +33,12 @@ object CameraHorizonEisHook : BaseHook() {
     const val ID = "camera_horizon_eis"
 
     private const val SETTING_MANAGER_CLASS = "com.android.camera.setting.SettingManager"
+
+    private const val MODULE_UI_CLASS =
+        "com.android.camera.normalvideo.ui.moduleui.NormalVideoModuleUI"
+
+    /** Показ обучающей подсказки о съёмке с горизонтом. */
+    private const val TIPS_METHOD = "showOrHideHelpTipsView"
 
     /** `ISettingKeys.KEY_VIDEO_STABLE`. */
     private const val STABLE_KEY = "pref_video_super_stable"
@@ -49,6 +61,8 @@ object CameraHorizonEisHook : BaseHook() {
     private var reported = false
 
     override fun onHook() {
+        silenceHelpTips()
+
         val clazz = findClassOrNull(SETTING_MANAGER_CLASS)
         if (clazz == null) {
             XLog.w("[$id] класс $SETTING_MANAGER_CLASS не найден")
@@ -70,6 +84,26 @@ object CameraHorizonEisHook : BaseHook() {
             XLog.w("[$id] метод getSettingValueFromKey не найден")
         } else {
             XLog.i("[$id] getSettingValueFromKey перехвачен")
+        }
+    }
+
+    /**
+     * Отключает обучающую подсказку о съёмке с горизонтом: она тянет видео
+     * `R.raw.horizon_tip`, которого в этой прошивке нет. Метод занимается
+     * только этой подсказкой, так что кроме неё ничего не теряется.
+     */
+    private fun silenceHelpTips() {
+        val clazz = findClassOrNull(MODULE_UI_CLASS)
+        if (clazz == null) {
+            XLog.w("[$id] класс $MODULE_UI_CLASS не найден")
+            return
+        }
+
+        val hooks = clazz.skipAll(TIPS_METHOD)
+        if (hooks.isEmpty()) {
+            XLog.w("[$id] метод $TIPS_METHOD не найден, камера может упасть на подсказке")
+        } else {
+            XLog.i("[$id] подсказка о горизонте отключена")
         }
     }
 }
