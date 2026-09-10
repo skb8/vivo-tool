@@ -14,47 +14,48 @@ import com.skb8.vivotool.core.XLog
  * модуль, система запретит такой режим — тогда используется приватный файл,
  * а UI показывает предупреждение ([isSharedWithHooks] == false).
  */
-class AppSettings(context: Context) {
+class AppSettings(private val context: Context) {
 
-    private var shared = true
-
-    @Suppress("DEPRECATION", "WorldReadableFiles")
-    private val prefs: SharedPreferences = try {
-        context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_WORLD_READABLE)
-    } catch (t: Throwable) {
-        XLog.w("MODE_WORLD_READABLE недоступен, настройки не увидят хуки: ${t.message}")
-        shared = false
-        context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    init {
-        if (shared) WorldReadable.fix(context, Constants.PREFS_NAME)
+    private val prefs: SharedPreferences = run {
+        val p = try {
+            @Suppress("DEPRECATION", "WorldReadableFiles")
+            context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_WORLD_READABLE)
+        } catch (_: Throwable) {
+            context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+        }
+        WorldReadable.fix(context, Constants.PREFS_NAME)
+        p
     }
 
     /** Видны ли настройки процессам с хуками. */
-    val isSharedWithHooks: Boolean get() = shared
+    val isSharedWithHooks: Boolean
+        get() = WorldReadable.isReadable(context, Constants.PREFS_NAME)
 
     fun isEnabled(hook: BaseHook): Boolean =
         prefs.getBoolean(Constants.enabledKey(hook.id), hook.enabledByDefault)
 
     fun setEnabled(hook: BaseHook, enabled: Boolean) {
-        prefs.edit().putBoolean(Constants.enabledKey(hook.id), enabled).apply()
+        prefs.edit().putBoolean(Constants.enabledKey(hook.id), enabled).commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
     fun getBoolean(key: String, default: Boolean): Boolean = prefs.getBoolean(key, default)
 
     fun setBoolean(key: String, value: Boolean) {
-        prefs.edit().putBoolean(key, value).apply()
+        prefs.edit().putBoolean(key, value).commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
     fun getInt(key: String, default: Int): Int = prefs.getInt(key, default)
 
     fun setInt(key: String, value: Int) {
-        prefs.edit().putInt(key, value).apply()
+        prefs.edit().putInt(key, value).commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
     fun remove(key: String) {
-        prefs.edit().remove(key).apply()
+        prefs.edit().remove(key).commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
     /** Все boolean-настройки с указанным префиксом. */
@@ -68,6 +69,7 @@ class AppSettings(context: Context) {
     fun removeWithPrefix(prefix: String) {
         val editor = prefs.edit()
         prefs.all.keys.filter { it.startsWith(prefix) }.forEach { editor.remove(it) }
-        editor.apply()
+        editor.commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 }

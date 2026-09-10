@@ -55,7 +55,7 @@ object AboutPhoneRomImageHook : BaseHook() {
     override fun onHook() {
         val resourcesClass = Resources::class.java
 
-        // Основной путь: и getDrawable(), и android:src из XML-разметки приходят сюда.
+        // 1. Основной путь: и getDrawable(), и android:src из XML-разметки приходят сюда.
         val loadDrawableHooks = resourcesClass.hookAllAfter("loadDrawable", ::onDrawableLoaded)
         if (loadDrawableHooks.isEmpty()) {
             // Скрытого loadDrawable нет — работаем по публичному API.
@@ -64,9 +64,14 @@ object AboutPhoneRomImageHook : BaseHook() {
             resourcesClass.hookAllAfter("getDrawableForDensity", ::onDrawableLoaded)
         }
 
-        // BitmapFactory.decodeResource() и прочее чтение ресурса как потока байт.
+        // 2. Внутренняя реализация Android 7+: ResourcesImpl.loadDrawable
+        findClassOrNull("android.content.res.ResourcesImpl")?.hookAllAfter("loadDrawable", ::onDrawableLoaded)
+
+        // 3. BitmapFactory.decodeResource() и прочее чтение ресурса как потока байт.
         resourcesClass.hookAllBefore("openRawResource") { hookParam ->
-            val res = hookParam.thisObject as? Resources ?: return@hookAllBefore
+            val res = (hookParam.thisObject as? Resources)
+                ?: (hookParam.args.firstNotNullOfOrNull { it as? Resources })
+                ?: return@hookAllBefore
             val requestedId = requestedId(hookParam.args) ?: return@hookAllBefore
             if (!isTarget(res, requestedId)) return@hookAllBefore
 
@@ -79,21 +84,41 @@ object AboutPhoneRomImageHook : BaseHook() {
     }
 
     private fun onDrawableLoaded(hookParam: XC_MethodHook.MethodHookParam) {
-        val res = hookParam.thisObject as? Resources ?: return
+        val res = (hookParam.thisObject as? Resources)
+            ?: (hookParam.args.firstNotNullOfOrNull { it as? Resources })
+            ?: return
         val requestedId = requestedId(hookParam.args) ?: return
         if (!isTarget(res, requestedId)) return
 
         replacementDrawable(res, hookParam.result as? Drawable)?.let { hookParam.result = it }
     }
 
-    /** Идентификатор ресурса — первый int среди аргументов метода. */
-    private fun requestedId(args: Array<Any?>?): Int? =
-        args?.firstNotNullOfOrNull { it as? Int }
+    /** Идентификатор ресурса — первый int или TypedValue.resourceId среди аргументов метода. */
+    private fun requestedId(args: Array<Any?>?): Int? {
+        if (args == null) return null
+        for (arg in args) {
+            when (arg) {
+                is Int -> if (arg != 0) return arg
+                is android.util.TypedValue -> if (arg.resourceId != 0) return arg.resourceId
+            }
+        }
+        return null
+    }
 
     private fun isTarget(res: Resources, requestedId: Int): Boolean {
         if (requestedId == 0) return false
         if (resourceId == 0) resolveId(res)
-        return resourceId != 0 && requestedId == resourceId
+        if (resourceId != 0 && requestedId == resourceId) return true
+
+        try {
+            val entryName = res.getResourceEntryName(requestedId)
+            if (entryName == RESOURCE_NAME) {
+                resourceId = requestedId
+                return true
+            }
+        } catch (_: Resources.NotFoundException) {
+        }
+        return false
     }
 
     private fun resolveId(res: Resources) {

@@ -122,6 +122,14 @@ fun AppHooksScreen(
                         text = stringResource(R.string.reboot_needed_text)
                     )
                 }
+            } else if (app.packageName == "com.android.systemui") {
+                item {
+                    NoticeCard(
+                        icon = Icons.Rounded.RestartAlt,
+                        title = stringResource(R.string.systemui_restart_needed_title),
+                        text = stringResource(R.string.systemui_restart_needed_text)
+                    )
+                }
             }
 
             items(app.hooks, key = { it.id }) { hook ->

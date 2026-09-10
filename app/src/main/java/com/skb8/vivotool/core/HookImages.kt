@@ -29,7 +29,9 @@ internal object HookImages {
     /** Сырые байты картинки или null, если пользователь ничего не выбрал. */
     fun bytes(key: String): ByteArray? = synchronized(this) {
         val store = try {
-            prefs.apply { if (hasFileChanged()) reload() }
+            prefs.apply {
+                if (cachedKey == null || hasFileChanged()) reload()
+            }
         } catch (t: Throwable) {
             XLog.e("Не удалось прочитать хранилище картинок", t)
             return null

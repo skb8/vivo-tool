@@ -42,7 +42,12 @@ object AppControl {
      * root недоступен — тогда остаётся открыть экран «О приложении».
      */
     fun forceStop(packageName: String): Boolean = try {
-        val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "am force-stop $packageName"))
+        val command = if (packageName == "com.android.systemui" || packageName == "com.vivo.systemuiplugin") {
+            "pkill -f com.android.systemui || killall com.android.systemui"
+        } else {
+            "am force-stop $packageName"
+        }
+        val process = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
         val finished = process.waitFor(SU_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         if (!finished) {
             process.destroy()

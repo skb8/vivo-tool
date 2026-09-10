@@ -8,36 +8,47 @@ import java.io.File
  * Доступность файлов настроек чужим процессам.
  *
  * Хуки читают наши настройки из процесса целевого приложения через
- * `XSharedPreferences`, поэтому мало открыть файл в MODE_WORLD_READABLE —
- * нужно ещё, чтобы в каталоги над ним можно было войти. После очистки данных
- * приложения система создаёт каталог данных заново с приватными правами, и
- * хуки перестают видеть настройки, хотя сам файл читаемый.
- *
- * Каталогам ставим только право на вход, файлу — на чтение: списка файлов
- * чужим процессам знать не нужно.
+ * `XSharedPreferences`, поэтому каталоги над файлом должны быть доступны
+ * для входа (x) и чтения (r), а сам файл настроек — для чтения (r).
  */
 internal object WorldReadable {
 
-    fun fix(context: Context, prefsName: String) {
+    fun fix(context: Context, prefsName: String? = null) {
+        try {
+            val dataDir = File(context.applicationInfo.dataDir)
+            makeTraversable(dataDir)
+
+            val prefsDir = File(dataDir, "shared_prefs")
+            makeTraversable(prefsDir)
+
+            if (prefsName != null) {
+                makeReadable(File(prefsDir, "$prefsName.xml"))
+            }
+
+            prefsDir.listFiles()?.forEach { file ->
+                if (file.isFile) makeReadable(file)
+            }
+        } catch (t: Throwable) {
+            XLog.e("Не удалось обновить права доступа к $prefsName", t)
+        }
+    }
+
+    fun isReadable(context: Context, prefsName: String): Boolean = try {
         val dataDir = File(context.applicationInfo.dataDir)
-        val prefsDir = File(dataDir, "shared_prefs")
-
-        traversable(dataDir)
-        traversable(prefsDir)
-        readable(File(prefsDir, "$prefsName.xml"))
+        val prefsFile = File(dataDir, "shared_prefs/$prefsName.xml")
+        !prefsFile.exists() || prefsFile.canRead()
+    } catch (_: Throwable) {
+        true
     }
 
-    private fun traversable(dir: File) {
-        if (!dir.isDirectory) return
-        if (!dir.setExecutable(true, false)) {
-            XLog.d("Каталог ${dir.name} не удалось открыть для входа")
-        }
+    private fun makeTraversable(dir: File) {
+        if (!dir.exists()) return
+        dir.setReadable(true, false)
+        dir.setExecutable(true, false)
     }
 
-    private fun readable(file: File) {
-        if (!file.isFile) return
-        if (!file.setReadable(true, false)) {
-            XLog.d("Файл ${file.name} не удалось открыть на чтение")
-        }
+    private fun makeReadable(file: File) {
+        if (!file.exists()) return
+        file.setReadable(true, false)
     }
 }

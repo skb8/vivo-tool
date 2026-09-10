@@ -37,6 +37,8 @@
     <!-- Твики одного приложения -->
     <string name="reboot_needed_title">Нужна перезагрузка</string>
     <string name="reboot_needed_text">Твики системного фреймворка включаются при запуске system_server, поэтому после переключения перезагрузите устройство.</string>
+    <string name="systemui_restart_needed_title">Нужен перезапуск SystemUI</string>
+    <string name="systemui_restart_needed_text">Для применения изменений перезапустите SystemUI кнопкой сверху (требуется root) или перезагрузите устройство.</string>
     <string name="tap_to_configure">Нажмите, чтобы настроить</string>
 
     <!-- Хуки -->

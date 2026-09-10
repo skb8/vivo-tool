@@ -21,24 +21,27 @@ object ImageStore {
 
     private const val WEBP_QUALITY = 95
 
-    @Suppress("DEPRECATION", "WorldReadableFiles")
     private fun prefs(context: Context): SharedPreferences = try {
-        context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_WORLD_READABLE).also {
-            WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
-        }
-    } catch (t: Throwable) {
-        XLog.w("Хранилище картинок недоступно хукам: ${t.message}")
+        @Suppress("DEPRECATION", "WorldReadableFiles")
+        context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_WORLD_READABLE)
+    } catch (_: Throwable) {
         context.getSharedPreferences(Constants.IMAGE_PREFS_NAME, Context.MODE_PRIVATE)
+    }.also {
+        WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
     }
 
     /** Сохраняет картинку. Возвращает false, если не удалось сжать или записать. */
     fun save(context: Context, key: String, bitmap: Bitmap): Boolean {
         val bytes = compress(bitmap) ?: return false
         return try {
-            prefs(context).edit()
+            val saved = prefs(context).edit()
                 .putString(key, Base64.encodeToString(bytes, Base64.NO_WRAP))
                 .putLong(ImageKeys.updatedKey(key), System.currentTimeMillis())
                 .commit()
+            if (saved) {
+                WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
+            }
+            saved
         } catch (t: Throwable) {
             XLog.e("Не удалось сохранить картинку $key", t)
             false
@@ -51,6 +54,7 @@ object ImageStore {
             .remove(key)
             .remove(ImageKeys.updatedKey(key))
             .commit()
+        WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
     }
 
     fun load(context: Context, key: String): Bitmap? {
