@@ -29,11 +29,18 @@ object TargetApps {
         Constants.ALL_PACKAGES to R.string.package_all_apps
     )
 
+    /** Пакеты-плагины, которые в UI объединяются с родительским приложением. */
+    private val packageAliases = mapOf(
+        "com.vivo.systemuiplugin" to "com.android.systemui"
+    )
+
     fun load(context: Context): List<TargetApp> {
         val byPackage = linkedMapOf<String, MutableList<BaseHook>>()
         HookRegistry.hooks.forEach { hook ->
-            hook.targetPackages.forEach { packageName ->
-                byPackage.getOrPut(packageName) { mutableListOf() }.add(hook)
+            hook.targetPackages.forEach { rawPackage ->
+                val packageName = packageAliases[rawPackage] ?: rawPackage
+                val list = byPackage.getOrPut(packageName) { mutableListOf() }
+                if (hook !in list) list.add(hook)
             }
         }
 

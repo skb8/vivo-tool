@@ -5,6 +5,7 @@ import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.camera.CameraHorizonEisHook
 import com.skb8.vivotool.hooks.camera.CameraZeissHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
+import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
 
 /**
  * Список подключённых хуков — единственное место, куда нужно добавить свой хук.
@@ -27,5 +28,6 @@ object HookModules {
         CameraFeatureConfigHook,
         CameraZeissHook,
         CameraHorizonEisHook,
+        VivoNewVolumeUiHook,
     )
 }

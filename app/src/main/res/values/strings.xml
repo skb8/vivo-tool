@@ -47,6 +47,8 @@
     <string name="hook_camera_horizon_eis_description">Standard stabilization in video runs the horizon-levelling mode on the main camera. Experimental: the firmware does not offer this mode</string>
     <string name="hook_camera_zeiss_title">Zeiss features</string>
     <string name="hook_camera_zeiss_description">The logo in the frame watermark, the T* colour button and the portrait formulas. The tweak sets the feature flags itself</string>
+    <string name="hook_systemui_new_volume_ui_title">New volume panel</string>
+    <string name="hook_systemui_new_volume_ui_description">OriginOS 5 volume slider: compact pill at the screen edge, spring physics and volume key stretch feedback</string>
     <!-- About phone image -->
     <string name="about_phone_screen_title">About phone image</string>
     <string name="about_phone_no_image">No picture selected — the stock one is shown</string>

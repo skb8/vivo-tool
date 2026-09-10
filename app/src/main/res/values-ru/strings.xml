@@ -48,6 +48,8 @@
     <string name="hook_camera_horizon_eis_description">Режим «Стандартная» в видео запускает выравнивание горизонта с основной камеры. Экспериментально: прошивка этот режим не предлагает</string>
     <string name="hook_camera_zeiss_title">Возможности Zeiss</string>
     <string name="hook_camera_zeiss_description">Логотип в водяном знаке-рамке, кнопка цвета T* и формулы портрета. Нужные фичи твик включает сам</string>
+    <string name="hook_systemui_new_volume_ui_title">Новая панель громкости</string>
+    <string name="hook_systemui_new_volume_ui_description">Стиль регулировки громкости OriginOS 5: компактная капсула у края экрана, пружинные анимации и реакция на клавиши</string>
     <!-- Картинка «О телефоне» -->
     <string name="about_phone_screen_title">Картинка «О телефоне»</string>
     <string name="about_phone_no_image">Картинка не выбрана — показывается стандартная</string>
