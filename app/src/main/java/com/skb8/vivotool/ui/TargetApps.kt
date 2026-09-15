@@ -31,7 +31,8 @@ object TargetApps {
 
     /** Пакеты-плагины, которые в UI объединяются с родительским приложением. */
     private val packageAliases = mapOf(
-        "com.vivo.systemuiplugin" to "com.android.systemui"
+        "com.vivo.systemuiplugin" to "com.android.systemui",
+        "system_server" to Constants.SYSTEM_FRAMEWORK
     )
 
     fun load(context: Context): List<TargetApp> {

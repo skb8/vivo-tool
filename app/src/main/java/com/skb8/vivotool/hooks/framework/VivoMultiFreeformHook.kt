@@ -40,7 +40,7 @@ object VivoMultiFreeformHook : BaseHook() {
     override val titleRes: Int = R.string.hook_framework_multi_freeform_title
     override val descriptionRes: Int = R.string.hook_framework_multi_freeform_description
 
-    override val targetPackages: Set<String> = setOf(Constants.SYSTEM_FRAMEWORK)
+    override val targetPackages: Set<String> = setOf(Constants.SYSTEM_FRAMEWORK, "system_server")
 
     override val enabledByDefault: Boolean = true
 
