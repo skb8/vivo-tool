@@ -35,7 +35,6 @@ object VivoMultiFreeformHook : BaseHook() {
     const val ID = "framework_multi_freeform"
 
     private const val UTILS_CLASS = "com.android.server.wm.VivoFreeformUtils"
-    private const val CONTROLLER_CLASS = "com.android.server.wm.VivoFreeformTaskController"
 
     override val id: String = ID
     override val titleRes: Int = R.string.hook_framework_multi_freeform_title
@@ -43,7 +42,7 @@ object VivoMultiFreeformHook : BaseHook() {
 
     override val targetPackages: Set<String> = setOf(Constants.SYSTEM_FRAMEWORK)
 
-    override val enabledByDefault: Boolean = false
+    override val enabledByDefault: Boolean = true
 
     private val hookedLoaders = Collections.synchronizedSet(
         Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>())
@@ -65,7 +64,7 @@ object VivoMultiFreeformHook : BaseHook() {
             Boolean::class.javaPrimitiveType
         ) { param ->
             val name = param.args[0] as? String ?: return@hookAfter
-            if (name == UTILS_CLASS || name == CONTROLLER_CLASS) {
+            if (name == UTILS_CLASS) {
                 val loader = param.thisObject as? ClassLoader ?: return@hookAfter
                 hookClassLoader(loader)
             }
@@ -73,17 +72,16 @@ object VivoMultiFreeformHook : BaseHook() {
     }
 
     private fun hookClassLoader(loader: ClassLoader) {
-        if (!hookedLoaders.add(loader)) return
+        if (hookedLoaders.contains(loader)) return
 
-        val utilsClass = findClassOrNull(UTILS_CLASS, loader)
-        if (utilsClass != null) {
-            val unhooks = utilsClass.replaceAll("notSupportMultiVisibleFreeform") {
-                XLog.d("[$id] notSupportMultiVisibleFreeform() -> false")
-                false
-            }
-            if (unhooks.isNotEmpty()) {
-                XLog.i("[$id] VivoFreeformUtils.notSupportMultiVisibleFreeform подменён на false (активно до 2 окон)")
-            }
+        val utilsClass = findClassOrNull(UTILS_CLASS, loader) ?: return
+        val unhooks = utilsClass.replaceAll("notSupportMultiVisibleFreeform") {
+            XLog.d("[$id] notSupportMultiVisibleFreeform() -> false")
+            false
+        }
+        if (unhooks.isNotEmpty()) {
+            hookedLoaders.add(loader)
+            XLog.i("[$id] VivoFreeformUtils.notSupportMultiVisibleFreeform подменён на false (активно до 2 окон)")
         }
     }
 }

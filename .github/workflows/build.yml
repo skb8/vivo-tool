@@ -55,18 +55,6 @@ jobs:
           VIVO_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Publish APK to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release delete latest --yes || true
-          git tag -d latest 2>/dev/null || true
-          git push origin :refs/tags/latest 2>/dev/null || true
-          gh release create latest app/build/outputs/apk/release/*.apk \
-            --title "Latest build" \
-            --notes "Automated build from commit ${{ github.sha }}" \
-            --prerelease
-
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         continue-on-error: true
