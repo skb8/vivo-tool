@@ -4,6 +4,7 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.camera.CameraHorizonEisHook
 import com.skb8.vivotool.hooks.camera.CameraZeissHook
+import com.skb8.vivotool.hooks.framework.VivoMultiFreeformHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
 
@@ -29,5 +30,7 @@ object HookModules {
         CameraZeissHook,
         CameraHorizonEisHook,
         VivoNewVolumeUiHook,
+        VivoMultiFreeformHook,
     )
 }
+

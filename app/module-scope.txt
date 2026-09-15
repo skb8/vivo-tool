@@ -13,8 +13,9 @@ com.android.camera               # доступные фичи камеры
 com.android.settings             # картинка карточки «О телефоне»
 com.android.systemui             # SystemUI / шторка, статусбар, громкость
 com.vivo.systemuiplugin          # плагин интерфейса системы Vivo (громкость OriginOS 5)
+android                          # системный фреймворк (system_server, плавающие окна)
 
 # Другие частые цели (раскомментируйте, когда появятся хуки):
-# android                        # системный фреймворк (system_server)
 # com.vivo.upslide               # жесты и шторка Vivo/Funtouch
 # com.bbk.launcher2              # лончер Vivo
+
