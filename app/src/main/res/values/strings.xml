@@ -50,6 +50,7 @@
     <string name="hook_camera_zeiss_title">Zeiss features</string>
     <string name="hook_camera_zeiss_description">The logo in the frame watermark, the T* colour button and the portrait formulas. The tweak sets the feature flags itself</string>
     <string name="hook_systemui_new_volume_ui_title">New volume panel</string>
+    <string name="hook_systemui_new_volume_ui_description">OriginOS 5 volume slider: compact pill at the screen edge, spring physics and volume key stretch feedback</string>
     <string name="hook_framework_multi_freeform_title">Multiple floating windows</string>
     <string name="hook_framework_multi_freeform_description">Allows opening multiple floating windows simultaneously on screen without auto-minimizing</string>
     <string name="freeform_max_windows_label">Simultaneous windows limit: %1$d</string>
