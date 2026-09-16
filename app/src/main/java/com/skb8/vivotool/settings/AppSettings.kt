@@ -53,6 +53,13 @@ class AppSettings(private val context: Context) {
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
+    fun getFreeformLimit(): Int =
+        getInt(Constants.FREEFORM_LIMIT_KEY, Constants.DEFAULT_FREEFORM_LIMIT).coerceIn(2, 10)
+
+    fun setFreeformLimit(limit: Int) {
+        setInt(Constants.FREEFORM_LIMIT_KEY, limit.coerceIn(2, 10))
+    }
+
     fun remove(key: String) {
         prefs.edit().remove(key).commit()
         WorldReadable.fix(context, Constants.PREFS_NAME)

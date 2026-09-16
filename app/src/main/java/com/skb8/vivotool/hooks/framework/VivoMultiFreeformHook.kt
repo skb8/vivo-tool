@@ -1,40 +1,32 @@
 package com.skb8.vivotool.hooks.framework
 
+import android.os.IBinder
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
+import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
+import de.robv.android.xposed.XposedHelpers
 import java.util.Collections
 import java.util.WeakHashMap
 
 /**
- * Включение одновременного открытия до двух плавающих окон (Freeform).
+ * Включение одновременного открытия плавающих окон (Freeform) от 2 до 10.
  *
  * В OriginOS на обычных смартфонах установлено ограничение в максимум 1 активное
  * плавающее окно: при открытии второго окна предыдущее принудительно сворачивается в док
  * в методе `com.android.server.wm.VivoFreeformTaskController.minimizeCurrentVisibleFreeformTaskIfNeed`.
  *
- * Ограничение определяется проверкой:
- * `VivoFreeformUtils.notSupportMultiVisibleFreeform(TaskDisplayArea)`:
- * ```java
- * public static boolean notSupportMultiVisibleFreeform(TaskDisplayArea taskDisplayArea) {
- *     boolean isFoldSecondary = isFoldDev() && "local:secondary".equals(taskDisplayArea.mDisplayContent.getDisplayInfo().uniqueId);
- *     boolean isPhone = (isFoldDev() || sIsPadDevice) ? false : true;
- *     return isFoldSecondary || isPhone;
- * }
- * ```
- * На планшетах и складных устройствах Fold метод возвращает `false`, что задаёт
- * `maxVisibleCount = 2`.
- *
- * Данный хук переопределяет метод `notSupportMultiVisibleFreeform`, чтобы он всегда
- * возвращал `false`. Это включает нативную поддержку до 2-х плавающих окон на обычных
- * телефонах с сохранением корректного позиционирования, жестов и анимаций.
+ * При лимите 2 хук активирует нативную логику Fold (`VivoFreeformUtils.notSupportMultiVisibleFreeform -> false`).
+ * При лимите от 3 до 10 хук перехватывает `minimizeCurrentVisibleFreeformTaskIfNeed`
+ * и позволяет держать открытыми до выбранного пользователем количества окон.
  */
 object VivoMultiFreeformHook : BaseHook() {
 
     const val ID = "framework_multi_freeform"
 
     private const val UTILS_CLASS = "com.android.server.wm.VivoFreeformUtils"
+    private const val CONTROLLER_CLASS = "com.android.server.wm.VivoFreeformTaskController"
 
     override val id: String = ID
     override val titleRes: Int = R.string.hook_framework_multi_freeform_title
@@ -64,7 +56,7 @@ object VivoMultiFreeformHook : BaseHook() {
             Boolean::class.javaPrimitiveType
         ) { param ->
             val name = param.args[0] as? String ?: return@hookAfter
-            if (name == UTILS_CLASS) {
+            if (name == UTILS_CLASS || name == CONTROLLER_CLASS) {
                 val loader = param.thisObject as? ClassLoader ?: return@hookAfter
                 hookClassLoader(loader)
             }
@@ -74,14 +66,85 @@ object VivoMultiFreeformHook : BaseHook() {
     private fun hookClassLoader(loader: ClassLoader) {
         if (hookedLoaders.contains(loader)) return
 
-        val utilsClass = findClassOrNull(UTILS_CLASS, loader) ?: return
-        val unhooks = utilsClass.replaceAll("notSupportMultiVisibleFreeform") {
-            XLog.d("[$id] notSupportMultiVisibleFreeform() -> false")
-            false
+        var hookedAny = false
+
+        // 1. Нативная поддержка Fold (база для 2 окон, жестов и позиционирования)
+        val utilsClass = findClassOrNull(UTILS_CLASS, loader)
+        if (utilsClass != null) {
+            val unhooks = utilsClass.replaceAll("notSupportMultiVisibleFreeform") {
+                false
+            }
+            if (unhooks.isNotEmpty()) {
+                hookedAny = true
+                XLog.i("[$id] VivoFreeformUtils.notSupportMultiVisibleFreeform подменён на false")
+            }
         }
-        if (unhooks.isNotEmpty()) {
+
+        // 2. Расширение лимита от 2 до 10 окон через VivoFreeformTaskController
+        val controllerClass = findClassOrNull(CONTROLLER_CLASS, loader)
+        if (controllerClass != null) {
+            val unhooks = controllerClass.hookAllBefore("minimizeCurrentVisibleFreeformTaskIfNeed") { param ->
+                val limit = HookPrefs.getFreeformLimit()
+                if (limit <= 2) {
+                    // При лимите 2 оставляем нативную логику Fold
+                    return@hookAllBefore
+                }
+
+                val tasks = param.thisObject.fieldOrNull("mVivoFreeformTasks") as? List<*>
+                    ?: return@hookAllBefore
+
+                // Подсчитываем текущие видимые задачи
+                val visibleList = mutableListOf<Pair<Any, Any>>() // (Task, TopActivity)
+                for (i in tasks.indices.reversed()) {
+                    val vTask = tasks[i] ?: continue
+                    val task = vTask.callOrNull("getTask") ?: continue
+                    val isVisible = param.thisObject.callOrNull("isVisibleFreeformTask", task) as? Boolean ?: false
+                    if (isVisible) {
+                        val topActivity = task.callOrNull("getTopMostActivity")
+                        if (topActivity != null) {
+                            visibleList.add(Pair(task, topActivity))
+                        }
+                    }
+                }
+
+                val startingFreeform = param.args.firstOrNull() as? Boolean ?: false
+                val threshold = if (startingFreeform) limit - 1 else limit
+
+                if (visibleList.size <= threshold) {
+                    // Окон меньше лимита — отменяем принудительное сворачивание
+                    param.result = null
+                    return@hookAllBefore
+                }
+
+                // Лимит превышен: сворачиваем самое старое окно (находящееся в конце списка)
+                val excess = visibleList.size - threshold
+                val wmService = param.thisObject.fieldOrNull("mWmService")
+                val atmService = wmService?.fieldOrNull("mAtmService")
+
+                for (idx in 0 until excess) {
+                    val targetIndex = visibleList.size - 1 - idx
+                    if (targetIndex in visibleList.indices) {
+                        val (task, topActivity) = visibleList[targetIndex]
+                        try {
+                            XposedHelpers.setBooleanField(task, "mFreeFormLayerBoost", false)
+                        } catch (_: Throwable) {}
+                        val appToken = topActivity.fieldOrNull("appToken") as? IBinder
+                        if (appToken != null) {
+                            atmService?.callOrNull("miniMizeWindowVivoFreeformMode", appToken, true)
+                        }
+                    }
+                }
+
+                param.result = null
+            }
+            if (unhooks.isNotEmpty()) {
+                hookedAny = true
+                XLog.i("[$id] VivoFreeformTaskController.minimizeCurrentVisibleFreeformTaskIfNeed хукнут (лимит 2..10)")
+            }
+        }
+
+        if (hookedAny) {
             hookedLoaders.add(loader)
-            XLog.i("[$id] VivoFreeformUtils.notSupportMultiVisibleFreeform подменён на false (активно до 2 окон)")
         }
     }
 }

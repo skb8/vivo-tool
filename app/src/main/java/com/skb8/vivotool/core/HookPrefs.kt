@@ -36,6 +36,9 @@ internal object HookPrefs {
     fun getInt(key: String, default: Int): Int =
         snapshot()?.getInt(key, default) ?: default
 
+    fun getFreeformLimit(): Int =
+        getInt(Constants.FREEFORM_LIMIT_KEY, Constants.DEFAULT_FREEFORM_LIMIT).coerceIn(2, 10)
+
     fun getString(key: String, default: String): String =
         snapshot()?.getString(key, default) ?: default
 

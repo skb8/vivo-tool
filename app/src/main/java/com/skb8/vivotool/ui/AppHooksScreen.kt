@@ -20,19 +20,24 @@ import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,9 +47,11 @@ import androidx.compose.ui.unit.dp
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
+import com.skb8.vivotool.hooks.framework.VivoMultiFreeformHook
 import com.skb8.vivotool.settings.AppSettings
 import com.skb8.vivotool.settings.RequiredFeatures
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Твики одного приложения.
@@ -62,6 +69,7 @@ fun AppHooksScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings = remember { AppSettings(context) }
+    var freeformLimit by remember { mutableIntStateOf(settings.getFreeformLimit()) }
     val enabledState = remember(app.packageName) {
         mutableStateMapOf<String, Boolean>().apply {
             app.hooks.forEach { put(it.id, settings.isEnabled(it)) }
@@ -133,16 +141,56 @@ fun AppHooksScreen(
             }
 
             items(app.hooks, key = { it.id }) { hook ->
+                val isMultiFreeform = hook.id == VivoMultiFreeformHook.ID
+                val isEnabled = enabledState[hook.id] ?: hook.enabledByDefault
+
                 HookRow(
                     hook = hook,
-                    enabled = enabledState[hook.id] ?: hook.enabledByDefault,
+                    enabled = isEnabled,
                     hasDetails = HookDetails.hasDetails(hook.id),
                     onToggle = { value ->
                         enabledState[hook.id] = value
                         settings.setEnabled(hook, value)
                         RequiredFeatures.apply(settings, hook, value)
                     },
-                    onOpenDetails = { onOpenHook(hook) }
+                    onOpenDetails = { onOpenHook(hook) },
+                    extraContent = if (isMultiFreeform && isEnabled) {
+                        {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 4.dp)
+                            ) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(bottom = 12.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.freeform_max_windows_label, freeformLimit),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Slider(
+                                    value = freeformLimit.toFloat(),
+                                    onValueChange = { newValue ->
+                                        val rounded = newValue.roundToInt().coerceIn(2, 10)
+                                        freeformLimit = rounded
+                                        settings.setFreeformLimit(rounded)
+                                    },
+                                    valueRange = 2f..10f,
+                                    steps = 7,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    } else null
                 )
             }
         }
@@ -155,59 +203,71 @@ private fun HookRow(
     enabled: Boolean,
     hasDetails: Boolean,
     onToggle: (Boolean) -> Unit,
-    onOpenDetails: () -> Unit
+    onOpenDetails: () -> Unit,
+    extraContent: (@Composable () -> Unit)? = null
 ) {
     Card {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { if (hasDetails) onOpenDetails() else onToggle(!enabled) }
-                    .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(hook.titleRes),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (hook.descriptionRes != 0) {
-                        Spacer(Modifier.height(2.dp))
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (hasDetails) Modifier.clickable { onOpenDetails() } else Modifier)
+                        .padding(start = 20.dp, end = if (hasDetails) 12.dp else 8.dp, top = 16.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(hook.descriptionRes),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(hook.titleRes),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
                         )
+                        if (hook.descriptionRes != 0) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(hook.descriptionRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (hasDetails) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.tap_to_configure),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     if (hasDetails) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.tap_to_configure),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline
                         )
                     }
                 }
+
                 if (hasDetails) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline
-                    )
+                    VerticalDivider(modifier = Modifier.height(36.dp))
+                    Spacer(Modifier.width(12.dp))
+                } else {
+                    Spacer(Modifier.width(8.dp))
                 }
+
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = onToggle,
+                    modifier = Modifier.padding(end = 16.dp)
+                )
             }
 
-            VerticalDivider(modifier = Modifier.height(36.dp))
-            Spacer(Modifier.width(12.dp))
-            Switch(
-                checked = enabled,
-                onCheckedChange = onToggle,
-                modifier = Modifier.padding(end = 16.dp)
-            )
+            if (extraContent != null) {
+                extraContent()
+            }
         }
     }
 }

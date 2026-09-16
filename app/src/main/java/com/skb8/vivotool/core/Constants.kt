@@ -21,4 +21,8 @@ object Constants {
 
     /** Пакет системного фреймворка (system_server). */
     const val SYSTEM_FRAMEWORK = "android"
+
+    /** Ключ настройки количества одновременных плавающих окон (2..10). */
+    const val FREEFORM_LIMIT_KEY = "hook_framework_multi_freeform_limit"
+    const val DEFAULT_FREEFORM_LIMIT = 2
 }
