@@ -101,12 +101,15 @@ val moduleScopePackages: Provider<List<String>> =
  */
 val appVersionName: String = providers.gradleProperty("vivoVersion").orNull
     ?.trim()
+    ?.removePrefix("v")
+    ?.removePrefix("V")
     ?.takeIf { it.isNotEmpty() }
     ?: "1"
 
 /** `1.2.3` → 10203, `1` → 1: код версии всегда растёт вместе с именем. */
 fun versionCodeOf(name: String): Int {
-    val parts = name.split('.').map { it.toIntOrNull() ?: 0 }
+    val clean = name.removePrefix("v").removePrefix("V")
+    val parts = clean.split('.').map { it.toIntOrNull() ?: 0 }
     val major = parts.getOrElse(0) { 0 }
     val minor = parts.getOrElse(1) { 0 }
     val patch = parts.getOrElse(2) { 0 }

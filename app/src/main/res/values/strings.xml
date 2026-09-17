@@ -34,10 +34,7 @@
     <string name="package_all_apps">All applications</string>
 
     <!-- Tweaks of one app -->
-    <string name="reboot_needed_title">Reboot required</string>
-    <string name="reboot_needed_text">System framework tweaks are applied when system_server starts, so reboot the device after toggling them.</string>
-    <string name="systemui_restart_needed_title">SystemUI restart required</string>
-    <string name="systemui_restart_needed_text">Restart SystemUI using the button above (requires root) or reboot your device to apply changes.</string>
+    <string name="soft_reboot_needed">Soft reboot required</string>
     <string name="tap_to_configure">Tap to configure</string>
 
     <!-- Hooks -->

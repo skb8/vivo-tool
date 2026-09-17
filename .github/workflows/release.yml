@@ -12,6 +12,8 @@ jobs:
   release:
     name: Release APK ${{ inputs.version }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -20,10 +22,14 @@ jobs:
     steps:
       - name: Check version format
         run: |
-          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Версия '$VERSION' не в формате x.x.x"
+          if ! echo "$VERSION" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Версия '$VERSION' не в формате x.x.x или vx.x.x"
             exit 1
           fi
+          CLEAN_VERSION="${VERSION#v}"
+          TAG="v${CLEAN_VERSION}"
+          echo "CLEAN_VERSION=$CLEAN_VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: Checkout
         uses: actions/checkout@v7
@@ -56,11 +62,22 @@ jobs:
           VIVO_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VIVO_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           VIVO_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace -PvivoVersion="$VERSION"
+        run: ./gradlew assembleRelease --stacktrace -PvivoVersion="$CLEAN_VERSION"
+
+      - name: Publish to GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK_FILE=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          RELEASE_APK="vivo-tool-${TAG}.apk"
+          cp "$APK_FILE" "$RELEASE_APK"
+          gh release create "$TAG" "$RELEASE_APK" \
+            --title "Vivo Tool $TAG" \
+            --generate-notes
 
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
-          name: vivo-tool-${{ inputs.version }}
-          path: app/build/outputs/apk/release/*.apk
+          name: vivo-tool-${{ env.TAG }}
+          path: vivo-tool-*.apk
           if-no-files-found: error
