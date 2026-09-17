@@ -76,6 +76,8 @@ class HookEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
 
     private fun detectFramework(): String {
         val known = mapOf(
+            "org.matrix.vector.daemon.VectorService" to "Vector",
+            "org.matrix.vector.daemon.VectorDaemon" to "Vector",
             "org.lsposed.lspd.core.Main" to "LSPosed",
             "org.lsposed.lspd.service.BridgeService" to "LSPosed",
             "com.elderdrivers.riru.edxp.core.Main" to "EdXposed",

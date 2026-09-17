@@ -16,11 +16,23 @@
     <string name="module_active">Модуль активен</string>
     <string name="module_inactive">Модуль не активирован</string>
     <string name="module_active_details">%1$s · Xposed API v%2$d</string>
-    <string name="module_inactive_hint">Включите модуль в LSPosed и перезагрузите устройство</string>
+    <string name="module_inactive_hint">Включите модуль в Vector / LSPosed и перезагрузите устройство</string>
     <string name="prefs_unavailable_title">Настройки недоступны хукам</string>
-    <string name="prefs_unavailable_text">Не удалось открыть файл настроек в режиме world-readable. Активируйте модуль в LSPosed и перезапустите приложение.</string>
+    <string name="prefs_unavailable_text">Не удалось открыть файл настроек в режиме world-readable. Активируйте модуль в Vector / LSPosed и перезапустите приложение.</string>
     <string name="scope_missing_title">Пакеты вне области действия</string>
     <string name="scope_missing_text">Для этих приложений есть твики, но они не перечислены в app/module-scope.txt, поэтому LSPosed не предложит их при выборе:\n%1$s</string>
+    <string name="scope_checking">Проверка scope в менеджере Xposed…</string>
+    <string name="scope_all_active_title">Все приложения в scope</string>
+    <string name="scope_all_active_text">Все поддерживаемые приложения (%1$d) отмечены в области действия Vector / LSPosed</string>
+    <string name="scope_missing_in_manager_title">Приложения не включены в scope</string>
+    <string name="scope_missing_in_manager_text">Следующие приложения не отмечены в области действия (scope) модуля в менеджере Vector / LSPosed:\n%1$s\n\nХуки для них применяться не будут, пока вы не отметите их в менеджере.</string>
+    <string name="scope_root_required_title">Проверка scope Xposed</string>
+    <string name="scope_root_required_text">Для проверки области действия (scope) требуется Root-доступ к конфигурации Vector / LSPosed.</string>
+    <string name="action_open_xposed_manager">Открыть Vector / LSPosed</string>
+    <string name="action_check_scope">Проверить через Root</string>
+    <string name="scope_badge_in_scope">В scope</string>
+    <string name="scope_badge_not_in_scope">Не в scope</string>
+    <string name="xposed_manager_not_found">Менеджер Vector / LSPosed не найден</string>
     <string name="no_tweaks_title">Твиков пока нет</string>
     <string name="no_tweaks_text">Добавьте хук в hooks/HookModules.kt и пакет приложения в app/module-scope.txt — приложение появится в этом списке. Инструкция: docs/WRITING_HOOKS.md</string>
     <plurals name="tweak_count">
@@ -33,7 +45,7 @@
     <string name="footer_summary">v%1$s · твиков: %2$d</string>
     <string name="package_system_framework">Системный фреймворк</string>
     <string name="package_all_apps">Все приложения</string>
-    <string name="package_origin_player">Виджет плеера (Origin Player)</string>
+    <string name="package_origin_player">Origin Player</string>
 
     <!-- Твики одного приложения -->
     <string name="soft_reboot_needed">Требуется мягкая перезагрузка</string>
