@@ -26,7 +26,8 @@ object TargetApps {
     /** Понятные названия для пакетов, у которых системное имя ничего не говорит. */
     private val labelOverrides = mapOf(
         Constants.SYSTEM_FRAMEWORK to R.string.package_system_framework,
-        Constants.ALL_PACKAGES to R.string.package_all_apps
+        Constants.ALL_PACKAGES to R.string.package_all_apps,
+        Constants.ORIGIN_PLAYER_PACKAGE to R.string.package_origin_player
     )
 
     /** Пакеты-плагины, которые в UI объединяются с родительским приложением. */

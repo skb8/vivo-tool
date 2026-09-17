@@ -42,6 +42,11 @@ internal object HookPrefs {
     fun getString(key: String, default: String): String =
         snapshot()?.getString(key, default) ?: default
 
+    fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String> =
+        snapshot()?.getStringSet(key, default) ?: default
+
+    fun getIslandApps(): Set<String> = getStringSet(Constants.ISLAND_APPS_KEY)
+
     /** Все настройки с указанным префиксом — для хуков со списком значений. */
     fun entriesWithPrefix(prefix: String): Map<String, Any?> {
         val store = snapshot() ?: return emptyMap()

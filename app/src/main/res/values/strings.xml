@@ -32,6 +32,7 @@
     <string name="footer_summary">v%1$s · tweaks: %2$d</string>
     <string name="package_system_framework">System framework</string>
     <string name="package_all_apps">All applications</string>
+    <string name="package_origin_player">Origin Player</string>
 
     <!-- Tweaks of one app -->
     <string name="soft_reboot_needed">Soft reboot required</string>
@@ -93,4 +94,14 @@
     <string name="reset_features_text">%1$d overridden features will go back to the firmware values.</string>
     <string name="force_stop_done">%1$s has been stopped</string>
     <string name="force_stop_failed">Could not force stop — opening the app info instead</string>
+
+    <!-- Origin Player Island Apps -->
+    <string name="hook_player_island_apps_title">Apps in Origin Island</string>
+    <string name="hook_player_island_apps_description">Allows adding any installed music player to the Origin Island notification</string>
+    <string name="island_apps_default_count">Supported by default: %1$d apps</string>
+    <string name="island_apps_search_hint">Search by name or package…</string>
+    <string name="island_apps_selected_count">Selected additional apps: %1$d</string>
+    <string name="island_apps_built_in_badge">Built-in</string>
+    <string name="island_apps_grant_permission">Grant permission</string>
+    <string name="island_apps_empty">No apps found</string>
 </resources>

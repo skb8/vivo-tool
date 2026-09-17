@@ -15,6 +15,7 @@ com.android.systemui             # SystemUI / шторка, статусбар, 
 com.vivo.systemuiplugin          # плагин интерфейса системы Vivo (громкость OriginOS 5)
 android                          # системный фреймворк (плавающие окна)
 system_server                    # процесс system_server (для Vector / LSPosed)
+com.vivo.musicwidgetmix          # Origin Player / виджет плеера (приложения в острове)
 
 # Другие частые цели (раскомментируйте, когда появятся хуки):
 # com.vivo.upslide               # жесты и шторка Vivo/Funtouch

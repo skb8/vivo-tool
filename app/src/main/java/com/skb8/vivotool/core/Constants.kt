@@ -25,4 +25,10 @@ object Constants {
     /** Ключ настройки количества одновременных плавающих окон (2..10). */
     const val FREEFORM_LIMIT_KEY = "hook_framework_multi_freeform_limit"
     const val DEFAULT_FREEFORM_LIMIT = 2
+
+    /** Пакет плеера Origin (виджет плеера / музыкальный остров). */
+    const val ORIGIN_PLAYER_PACKAGE = "com.vivo.musicwidgetmix"
+
+    /** Ключ настройки списка кастомных приложений для острова (Set<String>). */
+    const val ISLAND_APPS_KEY = "hook_origin_player_island_apps"
 }

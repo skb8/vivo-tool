@@ -60,6 +60,20 @@ class AppSettings(private val context: Context) {
         setInt(Constants.FREEFORM_LIMIT_KEY, limit.coerceIn(2, 10))
     }
 
+    fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String> =
+        prefs.getStringSet(key, default) ?: default
+
+    fun setStringSet(key: String, value: Set<String>) {
+        prefs.edit().putStringSet(key, value).commit()
+        WorldReadable.fix(context, Constants.PREFS_NAME)
+    }
+
+    fun getIslandApps(): Set<String> = getStringSet(Constants.ISLAND_APPS_KEY)
+
+    fun setIslandApps(apps: Set<String>) {
+        setStringSet(Constants.ISLAND_APPS_KEY, apps)
+    }
+
     fun remove(key: String) {
         prefs.edit().remove(key).commit()
         WorldReadable.fix(context, Constants.PREFS_NAME)
