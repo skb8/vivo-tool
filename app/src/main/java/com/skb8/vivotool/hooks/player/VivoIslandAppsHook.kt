@@ -14,7 +14,7 @@ import de.robv.android.xposed.XposedHelpers
  * в динамическом острове OriginOS (Dynamic Island / SuperX-уведомление),
  * а также перехват аудиопотоков.
  */
-object VivoIslandAppsHook : BaseHook {
+object VivoIslandAppsHook : BaseHook() {
 
     const val ID = "origin_player_island_apps"
 
@@ -64,18 +64,22 @@ object VivoIslandAppsHook : BaseHook {
         "com.tencent.qqmusicpad"
     )
 
-    override fun apply(classLoader: ClassLoader) {
+    override fun onHook() {
         XLog.i("Применяем хук добавления сторонних приложений в Origin Island")
 
-        hookWhitelistManager(classLoader)
-        hookAppUtils(classLoader)
-        hookMainApplication(classLoader)
+        hookWhitelistManager()
+        hookAppUtils()
+        hookMainApplication()
     }
 
-    private fun hookWhitelistManager(classLoader: ClassLoader) {
+    private fun hookWhitelistManager() {
+        val clazz = findClassOrNull("t3.v") ?: run {
+            XLog.w("[$id] Класс t3.v не найден в $hookedPackage")
+            return
+        }
         try {
             // g() заполняет f15026d (белый список для Острова)
-            hookAfter("t3.v", classLoader, "g") { param ->
+            clazz.hookAfter("g") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     try {
@@ -93,7 +97,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // h() заполняет f15023a (общий список перехвата аудиопотоков)
-            hookAfter("t3.v", classLoader, "h") { param ->
+            clazz.hookAfter("h") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     try {
@@ -111,7 +115,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // f() заполняет f15024b (виджеты / шторка)
-            hookAfter("t3.v", classLoader, "f") { param ->
+            clazz.hookAfter("f") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     try {
@@ -129,7 +133,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // Геттер c(): возвращает белый список острова
-            hookAfter("t3.v", classLoader, "c") { param ->
+            clazz.hookAfter("c") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
@@ -143,7 +147,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // Геттер d(): возвращает общий список перехвата аудиопотоков
-            hookAfter("t3.v", classLoader, "d") { param ->
+            clazz.hookAfter("d") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
@@ -157,7 +161,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // Геттер b(): возвращает список виджетов
-            hookAfter("t3.v", classLoader, "b") { param ->
+            clazz.hookAfter("b") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
@@ -174,10 +178,14 @@ object VivoIslandAppsHook : BaseHook {
         }
     }
 
-    private fun hookAppUtils(classLoader: ClassLoader) {
+    private fun hookAppUtils() {
+        val clazz = findClassOrNull("com.vivo.musicwidgetmix.utils.d") ?: run {
+            XLog.w("[$id] Класс com.vivo.musicwidgetmix.utils.d не найден в $hookedPackage")
+            return
+        }
         try {
             // d.P(Context, String): проверка перехвата аудиопотока в MainApplication
-            hookAfter("com.vivo.musicwidgetmix.utils.d", classLoader, "P", Context::class.java, String::class.java) { param ->
+            clazz.hookAfter("P", Context::class.java, String::class.java) { param ->
                 val pkg = param.args[1] as? String ?: return@hookAfter
                 val customApps = HookPrefs.getIslandApps()
                 if (pkg in customApps) {
@@ -186,7 +194,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // d.Q(Context, String): resident_music_app_white_list
-            hookAfter("com.vivo.musicwidgetmix.utils.d", classLoader, "Q", Context::class.java, String::class.java) { param ->
+            clazz.hookAfter("Q", Context::class.java, String::class.java) { param ->
                 val pkg = param.args[1] as? String ?: return@hookAfter
                 val customApps = HookPrefs.getIslandApps()
                 if (pkg in customApps) {
@@ -195,7 +203,7 @@ object VivoIslandAppsHook : BaseHook {
             }
 
             // d.M(Context, String): cooperation music check
-            hookAfter("com.vivo.musicwidgetmix.utils.d", classLoader, "M", Context::class.java, String::class.java) { param ->
+            clazz.hookAfter("M", Context::class.java, String::class.java) { param ->
                 val pkg = param.args[1] as? String ?: return@hookAfter
                 val customApps = HookPrefs.getIslandApps()
                 if (pkg in customApps) {
@@ -207,9 +215,13 @@ object VivoIslandAppsHook : BaseHook {
         }
     }
 
-    private fun hookMainApplication(classLoader: ClassLoader) {
+    private fun hookMainApplication() {
+        val clazz = findClassOrNull("com.vivo.musicwidgetmix.MainApplication") ?: run {
+            XLog.w("[$id] Класс com.vivo.musicwidgetmix.MainApplication не найден в $hookedPackage")
+            return
+        }
         try {
-            hookAfter("com.vivo.musicwidgetmix.MainApplication", classLoader, "onCreate") { param ->
+            clazz.hookAfter("onCreate") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
                     val appClass = param.thisObject.javaClass
