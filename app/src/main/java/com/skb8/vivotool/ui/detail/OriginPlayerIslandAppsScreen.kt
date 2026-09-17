@@ -179,17 +179,17 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(10.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -249,7 +249,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
             }
 
@@ -283,7 +283,8 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                             Button(
                                 onClick = {
                                     permissionLauncher.launch(GET_INSTALLED_APPS_PERMISSION)
-                                }
+                                },
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(stringResource(R.string.island_apps_grant_permission))
                             }
@@ -295,8 +296,8 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(filteredApps, key = { it.packageName }) { app ->
                         val isChecked = app.packageName in selectedApps
@@ -309,7 +310,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                     MaterialTheme.colorScheme.surface
                                 }
                             ),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -337,7 +338,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                     )
                                 } else {
                                     Surface(
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant,
                                         modifier = Modifier.size(40.dp)
                                     ) {}

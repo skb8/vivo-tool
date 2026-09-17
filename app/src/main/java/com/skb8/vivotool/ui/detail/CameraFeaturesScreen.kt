@@ -177,7 +177,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 onValueChange = { query = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.camera_features_search)) },
                 leadingIcon = {
@@ -196,7 +196,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                         }
                     }
                 },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             )
 
             val loaded = catalog
@@ -211,7 +211,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 loaded.error != null -> Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     ErrorCard(loaded)
@@ -234,8 +234,8 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item { CatalogHeader(loaded, overrides.size) }
 
@@ -327,7 +327,8 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
@@ -376,7 +377,8 @@ private fun ErrorCard(catalog: CameraFeatureCatalog) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(Modifier.padding(16.dp)) {
             Icon(
@@ -418,7 +420,7 @@ private fun FeatureRow(
     var menuOpen by remember { mutableStateOf(false) }
 
     Card(
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier

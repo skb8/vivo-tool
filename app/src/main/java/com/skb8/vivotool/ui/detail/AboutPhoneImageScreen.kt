@@ -127,7 +127,10 @@ fun AboutPhoneImageScreen(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onPickImage) {
+                Button(
+                    onClick = onPickImage,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -141,7 +144,10 @@ fun AboutPhoneImageScreen(
                     )
                 }
                 if (preview != null) {
-                    TextButton(onClick = onClearImage) {
+                    TextButton(
+                        onClick = onClearImage,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.action_reset))
@@ -152,7 +158,8 @@ fun AboutPhoneImageScreen(
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(

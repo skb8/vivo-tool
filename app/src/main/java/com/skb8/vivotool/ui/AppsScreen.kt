@@ -151,8 +151,8 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item { StatusCard() }
 
@@ -302,7 +302,7 @@ private fun MissingScopeCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
         ),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize()
@@ -313,7 +313,7 @@ private fun MissingScopeCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { isCollapsed = false }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -342,7 +342,7 @@ private fun MissingScopeCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -391,6 +391,7 @@ private fun MissingScopeCard(
                 ) {
                     Button(
                         onClick = onOpenManager,
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
@@ -433,7 +434,7 @@ private fun AllScopeActiveCard(totalApps: Int) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -471,12 +472,12 @@ private fun RootRequiredScopeCard(onCheck: () -> Unit, onOpenManager: () -> Unit
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(14.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -502,7 +503,8 @@ private fun RootRequiredScopeCard(onCheck: () -> Unit, onOpenManager: () -> Unit
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = onCheck,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.action_check_scope),
@@ -511,7 +513,8 @@ private fun RootRequiredScopeCard(onCheck: () -> Unit, onOpenManager: () -> Unit
                 }
                 TextButton(
                     onClick = onOpenManager,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.action_open_xposed_manager),
@@ -530,7 +533,7 @@ private fun AppRow(
     onClick: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -545,7 +548,7 @@ private fun AppRow(
                     contentDescription = null,
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(10.dp))
                 )
             } else {
                 Box(
@@ -601,11 +604,11 @@ private fun AppRow(
                 AppScopeStatus.IN_SCOPE -> {
                     Spacer(Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
@@ -626,11 +629,11 @@ private fun AppRow(
                 AppScopeStatus.NOT_IN_SCOPE -> {
                     Spacer(Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
@@ -678,7 +681,7 @@ private fun StatusCard() {
 
     Card(
         colors = CardDefaults.cardColors(containerColor = container),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Row(
             modifier = Modifier
@@ -727,7 +730,7 @@ fun NoticeCard(icon: ImageVector, title: String, text: String) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(Modifier.padding(14.dp)) {
             Icon(

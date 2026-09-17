@@ -123,8 +123,8 @@ fun AppHooksScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (app.packageName == Constants.SYSTEM_FRAMEWORK || app.packageName == "com.android.systemui") {
                 item {
@@ -202,7 +202,7 @@ private fun HookRow(
     extraContent: (@Composable () -> Unit)? = null
 ) {
     Card(
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -213,7 +213,7 @@ private fun HookRow(
                     modifier = Modifier
                         .weight(1f)
                         .then(if (hasDetails) Modifier.clickable { onOpenDetails() } else Modifier)
-                        .padding(start = 14.dp, end = if (hasDetails) 8.dp else 4.dp, top = 10.dp, bottom = 10.dp),
+                        .padding(start = 12.dp, end = if (hasDetails) 6.dp else 4.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
@@ -251,15 +251,15 @@ private fun HookRow(
 
                 if (hasDetails) {
                     VerticalDivider(modifier = Modifier.height(28.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                 } else {
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                 }
 
                 Switch(
                     checked = enabled,
                     onCheckedChange = onToggle,
-                    modifier = Modifier.padding(end = 12.dp)
+                    modifier = Modifier.padding(end = 10.dp)
                 )
             }
 
@@ -274,7 +274,7 @@ private fun HookRow(
 private fun CompactNotice(icon: ImageVector, text: String) {
     Surface(
         color = MaterialTheme.colorScheme.tertiaryContainer,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
