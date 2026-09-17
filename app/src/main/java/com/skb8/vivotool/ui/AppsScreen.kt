@@ -1,6 +1,8 @@
 package com.skb8.vivotool.ui
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,10 +23,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
@@ -61,7 +67,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -86,14 +94,17 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
     val scopePackages = remember { ModuleScope.packages(context) }
     val missingScope = remember { HookRegistry.packagesMissingFromScope(scopePackages) }
 
-    var scopeCheckState by remember { mutableStateOf<ScopeCheckState>(ScopeCheckState.Checking) }
+    // Используем закешированное состояние сразу, чтобы плашка не пропадала при переходе
+    var scopeCheckState by remember {
+        mutableStateOf(XposedScopeManager.cachedState ?: ScopeCheckState.Checking)
+    }
     var refreshTrigger by remember { mutableIntStateOf(0) }
 
     val apps by produceState(initialValue = emptyList<TargetApp>()) {
         value = withContext(Dispatchers.IO) { TargetApps.load(context) }
     }
 
-    // Автоматическое обновление статуса scope при возвращении в приложение (например, из менеджера Vector)
+    // Автоматическое обновление статуса scope при возвращении в приложение (с дебаунсом внутри XposedScopeManager)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -110,13 +121,8 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
     LaunchedEffect(refreshTrigger, apps) {
         if (apps.isEmpty()) return@LaunchedEffect
         withContext(Dispatchers.IO) {
-            val scoped = XposedScopeManager.readActiveScopeFromDb(context)
-            if (scoped != null) {
-                val missing = XposedScopeManager.findMissingApps(apps, scoped)
-                scopeCheckState = ScopeCheckState.Success(scoped, missing)
-            } else {
-                scopeCheckState = ScopeCheckState.RootUnavailable
-            }
+            val state = XposedScopeManager.checkScope(context, apps, force = false)
+            scopeCheckState = state
         }
     }
 
@@ -125,7 +131,10 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
-                    IconButton(onClick = { refreshTrigger++ }) {
+                    IconButton(onClick = {
+                        XposedScopeManager.markNeedRefresh()
+                        refreshTrigger++
+                    }) {
                         Icon(
                             imageVector = Icons.Rounded.Refresh,
                             contentDescription = stringResource(R.string.action_check_scope)
@@ -142,15 +151,15 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { StatusCard() }
 
             // Карточка проверки области действия (scope) в менеджере Vector / LSPosed
             when (val state = scopeCheckState) {
                 is ScopeCheckState.Checking -> {
-                    // Во время первичной проверки не перегружаем интерфейс
+                    // Пока нет данных (первый запуск), плашку не показываем
                 }
                 is ScopeCheckState.Success -> {
                     if (state.missingApps.isNotEmpty()) {
@@ -167,7 +176,10 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                                         ).show()
                                     }
                                 },
-                                onRefresh = { refreshTrigger++ }
+                                onRefresh = {
+                                    XposedScopeManager.markNeedRefresh()
+                                    refreshTrigger++
+                                }
                             )
                         }
                     } else {
@@ -180,7 +192,10 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                     if (ModuleStatus.isActive()) {
                         item {
                             RootRequiredScopeCard(
-                                onCheck = { refreshTrigger++ },
+                                onCheck = {
+                                    XposedScopeManager.markNeedRefresh()
+                                    refreshTrigger++
+                                },
                                 onOpenManager = {
                                     val opened = XposedScopeManager.openManager(context)
                                     if (!opened) {
@@ -225,7 +240,7 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                     text = stringResource(R.string.apps_section),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                 )
             }
 
@@ -242,7 +257,7 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(96.dp),
+                            .height(80.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
@@ -272,75 +287,140 @@ fun AppsScreen(onOpenApp: (TargetApp) -> Unit) {
     }
 }
 
+/**
+ * Сворачиваемая плашка со списком приложений, отсутствующих в scope Xposed менеджера.
+ */
 @Composable
 private fun MissingScopeCard(
     missingApps: List<TargetApp>,
     onOpenManager: () -> Unit,
     onRefresh: () -> Unit
 ) {
+    var isCollapsed by remember { mutableStateOf(false) }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        ),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        if (isCollapsed) {
+            // Свёрнутая компактная полоска с заголовком и значком слева
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isCollapsed = false }
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.WarningAmber,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.scope_missing_in_manager_title),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = stringResource(R.string.scope_missing_collapsed_title, missingApps.size),
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            val missingList = missingApps.joinToString("\n") { "• ${it.label} (${it.packageName})" }
-            Text(
-                text = stringResource(R.string.scope_missing_in_manager_text, missingList),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.9f)
-            )
-            Spacer(Modifier.height(14.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+        } else {
+            // Развёрнутый вид с подробным описанием и кнопками
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
-                Button(
-                    onClick = onOpenManager,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    modifier = Modifier.weight(1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isCollapsed = true },
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                        imageVector = Icons.Rounded.WarningAmber,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.action_open_xposed_manager),
-                        maxLines = 1
+                        text = stringResource(R.string.scope_missing_in_manager_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
                     )
+                    IconButton(
+                        onClick = { isCollapsed = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ExpandLess,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                Spacer(Modifier.height(4.dp))
+                val missingList = missingApps.joinToString("\n") { "• ${it.label} (${it.packageName})" }
+                Text(
+                    text = stringResource(R.string.scope_missing_in_manager_text, missingList),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.9f)
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onOpenManager,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.action_open_xposed_manager),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1
+                        )
+                    }
+                    IconButton(
+                        onClick = onRefresh,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
@@ -352,25 +432,26 @@ private fun AllScopeActiveCard(totalApps: Int) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
+        ),
+        shape = RoundedCornerShape(10.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Rounded.CheckCircle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp)
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
             Column {
                 Text(
                     text = stringResource(R.string.scope_all_active_title),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -389,40 +470,53 @@ private fun RootRequiredScopeCard(onCheck: () -> Unit, onOpenManager: () -> Unit
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        ),
+        shape = RoundedCornerShape(10.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Rounded.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.scope_root_required_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.scope_root_required_text),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onCheck) {
-                    Text(stringResource(R.string.action_check_scope))
+                OutlinedButton(
+                    onClick = onCheck,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_check_scope),
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
-                TextButton(onClick = onOpenManager) {
-                    Text(stringResource(R.string.action_open_xposed_manager))
+                TextButton(
+                    onClick = onOpenManager,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_open_xposed_manager),
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
         }
@@ -435,12 +529,14 @@ private fun AppRow(
     scopeStatus: AppScopeStatus,
     onClick: () -> Unit
 ) {
-    Card {
+    Card(
+        shape = RoundedCornerShape(10.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (app.icon != null) {
@@ -448,66 +544,34 @@ private fun AppRow(
                     bitmap = app.icon,
                     contentDescription = null,
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(8.dp))
                 )
             } else {
                 Box(
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(38.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Android,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(10.dp))
 
             Column(Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = app.label,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    when (scopeStatus) {
-                        AppScopeStatus.IN_SCOPE -> {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.scope_badge_in_scope),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        AppScopeStatus.NOT_IN_SCOPE -> {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.errorContainer
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.scope_badge_not_in_scope),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        AppScopeStatus.UNKNOWN -> {}
-                    }
-                }
-                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = app.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(1.dp))
                 val tweaks = pluralStringResource(
                     R.plurals.tweak_count,
                     app.hooks.size,
@@ -526,14 +590,77 @@ private fun AppRow(
                     text = app.packageName,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+
+            // Компактный индикатор scope справа, не зависящий от длины названия приложения
+            when (scopeStatus) {
+                AppScopeStatus.IN_SCOPE -> {
+                    Spacer(Modifier.width(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.scope_badge_in_scope),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+                AppScopeStatus.NOT_IN_SCOPE -> {
+                    Spacer(Modifier.width(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.errorContainer
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.PriorityHigh,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = stringResource(R.string.scope_badge_not_in_scope),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+                AppScopeStatus.UNKNOWN -> {}
+            }
+
+            Spacer(Modifier.width(6.dp))
 
             Icon(
                 imageVector = Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -549,20 +676,23 @@ private fun StatusCard() {
         if (active) MaterialTheme.colorScheme.onPrimaryContainer
         else MaterialTheme.colorScheme.onErrorContainer
 
-    Card(colors = CardDefaults.cardColors(containerColor = container)) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = container),
+        shape = RoundedCornerShape(12.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = if (active) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
                 contentDescription = null,
                 tint = content,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(12.dp))
             Column {
                 Text(
                     text = stringResource(
@@ -596,15 +726,17 @@ fun NoticeCard(icon: ImageVector, title: String, text: String) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
+        ),
+        shape = RoundedCornerShape(10.dp)
     ) {
-        Row(Modifier.padding(20.dp)) {
+        Row(Modifier.padding(14.dp)) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(20.dp)
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
             Column {
                 Text(
                     text = title,
@@ -612,7 +744,7 @@ fun NoticeCard(icon: ImageVector, title: String, text: String) {
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
@@ -628,7 +760,7 @@ private fun Footer() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = 6.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -636,7 +768,7 @@ private fun Footer() {
             imageVector = Icons.Rounded.Info,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(14.dp)
         )
         Spacer(Modifier.width(6.dp))
         Text(

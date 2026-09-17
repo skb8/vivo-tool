@@ -176,20 +176,26 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 onValueChange = { query = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.camera_features_search)) },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null
+                    )
+                },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
                             Icon(
-                                imageVector = Icons.Rounded.Close,
+                                imageVector = Icons.Rounded.Clear,
                                 contentDescription = stringResource(R.string.action_clear)
                             )
                         }
                     }
-                }
+                },
+                shape = RoundedCornerShape(12.dp)
             )
 
             val loaded = catalog
@@ -204,7 +210,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                 loaded.error != null -> Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     ErrorCard(loaded)
@@ -227,8 +233,8 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         item { CatalogHeader(loaded, overrides.size) }
 
@@ -410,11 +416,13 @@ private fun FeatureRow(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
 
-    Card {
+    Card(
+        shape = RoundedCornerShape(10.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {

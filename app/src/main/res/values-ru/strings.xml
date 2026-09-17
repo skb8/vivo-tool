@@ -24,11 +24,12 @@
     <string name="scope_checking">Проверка scope в менеджере Xposed…</string>
     <string name="scope_all_active_title">Все приложения в scope</string>
     <string name="scope_all_active_text">Все поддерживаемые приложения (%1$d) отмечены в области действия Vector / LSPosed</string>
-    <string name="scope_missing_in_manager_title">Приложения не включены в scope</string>
+    <string name="scope_missing_collapsed_title">Не в scope (%1$d)</string>
+    <string name="scope_missing_in_manager_title">Приложения не в scope</string>
     <string name="scope_missing_in_manager_text">Следующие приложения не отмечены в области действия (scope) модуля в менеджере Vector / LSPosed:\n%1$s\n\nХуки для них применяться не будут, пока вы не отметите их в менеджере.</string>
     <string name="scope_root_required_title">Проверка scope Xposed</string>
     <string name="scope_root_required_text">Для проверки области действия (scope) требуется Root-доступ к конфигурации Vector / LSPosed.</string>
-    <string name="action_open_xposed_manager">Открыть Vector / LSPosed</string>
+    <string name="action_open_xposed_manager">Открыть менеджер</string>
     <string name="action_check_scope">Проверить через Root</string>
     <string name="scope_badge_in_scope">В scope</string>
     <string name="scope_badge_not_in_scope">Не в scope</string>

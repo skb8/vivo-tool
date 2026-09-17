@@ -123,8 +123,8 @@ fun AppHooksScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (app.packageName == Constants.SYSTEM_FRAMEWORK || app.packageName == "com.android.systemui") {
                 item {
@@ -154,10 +154,10 @@ fun AppHooksScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 4.dp)
+                                    .padding(start = 14.dp, end = 14.dp, bottom = 10.dp, top = 2.dp)
                             ) {
                                 HorizontalDivider(
-                                    modifier = Modifier.padding(bottom = 12.dp),
+                                    modifier = Modifier.padding(bottom = 8.dp),
                                     color = MaterialTheme.colorScheme.outlineVariant
                                 )
                                 Row(
@@ -171,7 +171,7 @@ fun AppHooksScreen(
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(2.dp))
                                 Slider(
                                     value = freeformLimit.toFloat(),
                                     onValueChange = { newValue ->
@@ -201,7 +201,9 @@ private fun HookRow(
     onOpenDetails: () -> Unit,
     extraContent: (@Composable () -> Unit)? = null
 ) {
-    Card {
+    Card(
+        shape = RoundedCornerShape(10.dp)
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -211,7 +213,7 @@ private fun HookRow(
                     modifier = Modifier
                         .weight(1f)
                         .then(if (hasDetails) Modifier.clickable { onOpenDetails() } else Modifier)
-                        .padding(start = 20.dp, end = if (hasDetails) 12.dp else 8.dp, top = 16.dp, bottom = 16.dp),
+                        .padding(start = 14.dp, end = if (hasDetails) 8.dp else 4.dp, top = 10.dp, bottom = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
@@ -229,7 +231,7 @@ private fun HookRow(
                             )
                         }
                         if (hasDetails) {
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(3.dp))
                             Text(
                                 text = stringResource(R.string.tap_to_configure),
                                 style = MaterialTheme.typography.labelSmall,
@@ -241,22 +243,23 @@ private fun HookRow(
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
                 if (hasDetails) {
-                    VerticalDivider(modifier = Modifier.height(36.dp))
-                    Spacer(Modifier.width(12.dp))
-                } else {
+                    VerticalDivider(modifier = Modifier.height(28.dp))
                     Spacer(Modifier.width(8.dp))
+                } else {
+                    Spacer(Modifier.width(4.dp))
                 }
 
                 Switch(
                     checked = enabled,
                     onCheckedChange = onToggle,
-                    modifier = Modifier.padding(end = 16.dp)
+                    modifier = Modifier.padding(end = 12.dp)
                 )
             }
 
@@ -271,11 +274,11 @@ private fun HookRow(
 private fun CompactNotice(icon: ImageVector, text: String) {
     Surface(
         color = MaterialTheme.colorScheme.tertiaryContainer,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

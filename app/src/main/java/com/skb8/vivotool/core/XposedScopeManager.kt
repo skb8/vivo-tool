@@ -32,6 +32,18 @@ enum class AppScopeStatus {
  */
 object XposedScopeManager {
 
+    @Volatile
+    var cachedState: ScopeCheckState? = null
+        private set
+
+    @Volatile
+    private var lastCheckTime: Long = 0L
+
+    @Volatile
+    private var shouldForceRefresh: Boolean = false
+
+    private const val AUTO_CHECK_INTERVAL_MS = 25_000L
+
     private val POSSIBLE_DB_PATHS = listOf(
         "/data/adb/lspd/config/modules_config.db",
         "/data/adb/modules/zygisk_lsposed/config/modules_config.db",
@@ -39,6 +51,45 @@ object XposedScopeManager {
         "/data/system/users/0/lsposed/config/modules_config.db",
         "/data/system/users/0/vector/config/modules_config.db"
     )
+
+    fun markNeedRefresh() {
+        shouldForceRefresh = true
+    }
+
+    /**
+     * Проверяет scope с кешированием, чтобы частые переходы между экранами
+     * не вызывали повторные su-команды и не приводили к мерцанию/исчезновению UI.
+     */
+    fun checkScope(
+        context: Context,
+        apps: List<TargetApp>,
+        force: Boolean = false
+    ): ScopeCheckState {
+        val now = System.currentTimeMillis()
+        val cached = cachedState
+        if (!force && !shouldForceRefresh && cached != null && (now - lastCheckTime < AUTO_CHECK_INTERVAL_MS)) {
+            if (cached is ScopeCheckState.Success) {
+                val missing = findMissingApps(apps, cached.scopedPackages)
+                val updated = ScopeCheckState.Success(cached.scopedPackages, missing)
+                cachedState = updated
+                return updated
+            }
+            return cached
+        }
+        shouldForceRefresh = false
+
+        val scoped = readActiveScopeFromDb(context)
+        val newState = if (scoped != null) {
+            val missing = findMissingApps(apps, scoped)
+            ScopeCheckState.Success(scoped, missing)
+        } else {
+            ScopeCheckState.RootUnavailable
+        }
+
+        cachedState = newState
+        lastCheckTime = now
+        return newState
+    }
 
     /**
      * Читает множество пакетов, включённых в scope нашего модуля в Vector / LSPosed через root.
@@ -67,7 +118,7 @@ object XposedScopeManager {
 
         val copied = try {
             val process = Runtime.getRuntime().exec(arrayOf("su", "-c", copyScript))
-            val finished = process.waitFor(5, TimeUnit.SECONDS)
+            val finished = process.waitFor(4, TimeUnit.SECONDS)
             if (!finished) {
                 process.destroy()
                 false
@@ -211,6 +262,8 @@ object XposedScopeManager {
      * Возвращает true, если менеджер успешно запущен.
      */
     fun openManager(context: Context): Boolean {
+        markNeedRefresh()
+
         // 1. Категория менеджера Vector (как для отдельного, так и паразитического APK)
         val vectorIntent = Intent(Intent.ACTION_MAIN).apply {
             addCategory("org.matrix.vector.manager.LAUNCH_MANAGER")

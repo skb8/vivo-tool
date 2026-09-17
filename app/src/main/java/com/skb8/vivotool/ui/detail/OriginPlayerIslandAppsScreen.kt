@@ -179,26 +179,26 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(14.dp),
+                        modifier = Modifier.padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(10.dp))
                         Column {
                             Text(
                                 text = stringResource(
@@ -295,8 +295,8 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(filteredApps, key = { it.packageName }) { app ->
                         val isChecked = app.packageName in selectedApps
@@ -309,7 +309,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                     MaterialTheme.colorScheme.surface
                                 }
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -326,7 +326,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (app.icon != null) {

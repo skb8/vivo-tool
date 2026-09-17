@@ -25,11 +25,12 @@
     <string name="scope_checking">Checking Xposed manager scope…</string>
     <string name="scope_all_active_title">All apps in scope</string>
     <string name="scope_all_active_text">All supported apps (%1$d) are enabled in Vector / LSPosed scope</string>
-    <string name="scope_missing_in_manager_title">Apps not included in scope</string>
+    <string name="scope_missing_collapsed_title">Not in scope (%1$d)</string>
+    <string name="scope_missing_in_manager_title">Apps not in scope</string>
     <string name="scope_missing_in_manager_text">The following apps are not checked in the module\'s scope in Vector / LSPosed:\n%1$s\n\nHooks for them will not work until enabled in the manager.</string>
     <string name="scope_root_required_title">Xposed scope check</string>
     <string name="scope_root_required_text">Root access is required to check Vector / LSPosed scope configuration.</string>
-    <string name="action_open_xposed_manager">Open Vector / LSPosed</string>
+    <string name="action_open_xposed_manager">Open Manager</string>
     <string name="action_check_scope">Check via Root</string>
     <string name="scope_badge_in_scope">In scope</string>
     <string name="scope_badge_not_in_scope">Not in scope</string>
