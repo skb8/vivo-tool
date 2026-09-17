@@ -100,14 +100,14 @@ fun AboutPhoneImageScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(frameAspect)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(18.dp))
                 )
             } else {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(frameAspect)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -129,7 +129,7 @@ fun AboutPhoneImageScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onPickImage,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(18.dp)
                 ) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -146,7 +146,7 @@ fun AboutPhoneImageScreen(
                 if (preview != null) {
                     TextButton(
                         onClick = onClearImage,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
@@ -159,7 +159,7 @@ fun AboutPhoneImageScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(

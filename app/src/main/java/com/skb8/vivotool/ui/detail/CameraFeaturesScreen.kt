@@ -196,7 +196,7 @@ fun CameraFeaturesScreen(onBack: () -> Unit) {
                         }
                     }
                 },
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             )
 
             val loaded = catalog
@@ -328,7 +328,7 @@ private fun CatalogHeader(catalog: CameraFeatureCatalog, changed: Int) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
@@ -378,7 +378,7 @@ private fun ErrorCard(catalog: CameraFeatureCatalog) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Row(Modifier.padding(16.dp)) {
             Icon(
@@ -420,12 +420,12 @@ private fun FeatureRow(
     var menuOpen by remember { mutableStateOf(false) }
 
     Card(
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {

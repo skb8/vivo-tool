@@ -185,11 +185,11 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -249,7 +249,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(18.dp)
                 )
             }
 
@@ -284,7 +284,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                 onClick = {
                                     permissionLauncher.launch(GET_INSTALLED_APPS_PERMISSION)
                                 },
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(18.dp)
                             ) {
                                 Text(stringResource(R.string.island_apps_grant_permission))
                             }
@@ -310,7 +310,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                     MaterialTheme.colorScheme.surface
                                 }
                             ),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(18.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -327,7 +327,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (app.icon != null) {
@@ -338,7 +338,7 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                                     )
                                 } else {
                                     Surface(
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant,
                                         modifier = Modifier.size(40.dp)
                                     ) {}
