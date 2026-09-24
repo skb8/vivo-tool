@@ -3,6 +3,7 @@ package com.skb8.vivotool.core
 import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
+import androidx.compose.runtime.mutableStateOf
 import com.skb8.vivotool.BuildConfig
 import com.skb8.vivotool.ui.TargetApp
 import java.io.File
@@ -31,6 +32,8 @@ enum class AppScopeStatus {
  * в Xposed менеджерах (Vector, LSPosed).
  */
 object XposedScopeManager {
+
+    val isModuleEnabledInDbState = mutableStateOf<Boolean?>(null)
 
     @Volatile
     var cachedState: ScopeCheckState? = null
@@ -150,17 +153,35 @@ object XposedScopeManager {
 
             // 1. Vector & современная схема LSPosed (таблица modules: mid, module_pkg_name; scope: mid, app_pkg_name)
             var mid: Long? = null
+            var moduleActive = false
             try {
                 db.rawQuery(
-                    "SELECT mid FROM modules WHERE module_pkg_name = ?",
+                    "SELECT mid, enabled FROM modules WHERE module_pkg_name = ?",
                     arrayOf(modulePkg)
                 ).use { cursor ->
                     if (cursor.moveToFirst()) {
                         mid = cursor.getLong(0)
+                        val enabled = if (cursor.columnCount > 1) cursor.getInt(1) == 1 else true
+                        moduleActive = enabled
                     }
                 }
-            } catch (t: Throwable) {
-                XLog.d("Поиск mid в таблице modules: ${t.message}")
+            } catch (_: Throwable) {
+                try {
+                    db.rawQuery(
+                        "SELECT mid FROM modules WHERE module_pkg_name = ?",
+                        arrayOf(modulePkg)
+                    ).use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            mid = cursor.getLong(0)
+                            moduleActive = true
+                        }
+                    }
+                } catch (t: Throwable) {
+                    XLog.d("Поиск mid в таблице modules: ${t.message}")
+                }
+            }
+            if (moduleActive) {
+                isModuleEnabledInDbState.value = true
             }
 
             if (mid != null) {

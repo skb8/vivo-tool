@@ -80,6 +80,7 @@ import com.skb8.vivotool.core.HookRegistry
 import com.skb8.vivotool.core.ModuleScope
 import com.skb8.vivotool.core.ModuleStatus
 import com.skb8.vivotool.core.ScopeCheckState
+import com.skb8.vivotool.core.ServiceBridge
 import com.skb8.vivotool.core.XposedScopeManager
 import com.skb8.vivotool.settings.AppSettings
 import kotlinx.coroutines.Dispatchers
@@ -671,13 +672,31 @@ private fun AppRow(
 
 @Composable
 private fun StatusCard() {
-    val active = ModuleStatus.isActive()
+    val serviceConnected by ServiceBridge.isConnectedState
+    val dbEnabled by XposedScopeManager.isModuleEnabledInDbState
+    val active = ModuleStatus.isActive() || serviceConnected || (dbEnabled == true)
     val container =
         if (active) MaterialTheme.colorScheme.primaryContainer
         else MaterialTheme.colorScheme.errorContainer
     val content =
         if (active) MaterialTheme.colorScheme.onPrimaryContainer
         else MaterialTheme.colorScheme.onErrorContainer
+
+    val fwName = if (ModuleStatus.frameworkName() != "unknown") {
+        ModuleStatus.frameworkName()
+    } else if (ServiceBridge.frameworkName != null) {
+        ServiceBridge.frameworkName!!
+    } else {
+        "Vector"
+    }
+
+    val apiVer = if (ModuleStatus.xposedApiVersion() > 0) {
+        ModuleStatus.xposedApiVersion()
+    } else if (ServiceBridge.xposedService?.apiVersion != null) {
+        ServiceBridge.xposedService!!.apiVersion
+    } else {
+        102
+    }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = container),
@@ -710,8 +729,8 @@ private fun StatusCard() {
                     text = if (active) {
                         stringResource(
                             R.string.module_active_details,
-                            ModuleStatus.frameworkName(),
-                            ModuleStatus.xposedApiVersion()
+                            fwName,
+                            apiVer
                         )
                     } else {
                         stringResource(R.string.module_inactive_hint)

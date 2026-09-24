@@ -7,6 +7,9 @@ import com.skb8.vivotool.settings.ImageStore
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+
 /**
  * Мост между приложением и сервисом Xposed (Vector / LibXposed).
  *
@@ -14,6 +17,8 @@ import io.github.libxposed.service.XposedServiceHelper
  * позволяющий синхронизировать настройки в RemotePreferences и проверять статус работы фреймворка.
  */
 object ServiceBridge {
+
+    val isConnectedState = mutableStateOf(false)
 
     @Volatile
     var xposedService: XposedService? = null
@@ -28,7 +33,7 @@ object ServiceBridge {
         private set
 
     val isConnected: Boolean
-        get() = xposedService != null
+        get() = xposedService != null || isConnectedState.value
 
     val frameworkName: String?
         get() = xposedService?.frameworkName ?: if (isConnected) "Vector" else null
@@ -42,6 +47,7 @@ object ServiceBridge {
         XposedServiceHelper.registerListener(object : XposedServiceHelper.OnServiceListener {
             override fun onServiceBind(service: XposedService) {
                 xposedService = service
+                isConnectedState.value = true
                 XLog.i("XposedService подключен: API ${service.apiVersion}")
                 try {
                     val p = service.getRemotePreferences(Constants.PREFS_NAME)
@@ -59,6 +65,7 @@ object ServiceBridge {
             override fun onServiceDied(service: XposedService) {
                 if (xposedService == service) {
                     xposedService = null
+                    isConnectedState.value = false
                     remotePrefs = null
                     remoteImagePrefs = null
                     XLog.i("XposedService отключен")

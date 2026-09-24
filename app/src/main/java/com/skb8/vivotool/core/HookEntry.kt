@@ -69,6 +69,7 @@ class HookEntry : XposedModule() {
                 "frameworkName" -> hook(method).intercept { frameworkName }
             }
         }
+        XLog.i("hookSelf успешно применен к ModuleStatus")
     }
 
     companion object {
