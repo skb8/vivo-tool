@@ -16,6 +16,7 @@ com.vivo.systemuiplugin          # плагин интерфейса систе�
 android                          # системный фреймворк (плавающие окна)
 system_server                    # процесс system_server (для Vector / LSPosed)
 com.vivo.musicwidgetmix          # Origin Player / виджет плеера (приложения в острове)
+com.vivo.share                   # Vivo Share (отключение автовыключения через 10 минут)
 com.skb8.vivotool                # сам модуль (для самопроверки статуса в Vector)
 
 # Другие частые цели (раскомментируйте, когда появятся хуки):

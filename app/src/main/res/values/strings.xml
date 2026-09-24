@@ -117,4 +117,9 @@
     <string name="island_apps_built_in_badge">Built-in</string>
     <string name="island_apps_grant_permission">Grant permission</string>
     <string name="island_apps_empty">No apps found</string>
+
+    <!-- Vivo Share -->
+    <string name="package_vivo_share">Vivo Share</string>
+    <string name="hook_vivo_share_no_timeout_title">Disable 10-minute auto turn off</string>
+    <string name="hook_vivo_share_no_timeout_description">Prevents Vivo Share from automatically turning off after 10 minutes of inactivity</string>
 </resources>

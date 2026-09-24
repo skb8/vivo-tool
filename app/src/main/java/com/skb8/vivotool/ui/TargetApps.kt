@@ -27,7 +27,8 @@ object TargetApps {
     private val labelOverrides = mapOf(
         Constants.SYSTEM_FRAMEWORK to R.string.package_system_framework,
         Constants.ALL_PACKAGES to R.string.package_all_apps,
-        Constants.ORIGIN_PLAYER_PACKAGE to R.string.package_origin_player
+        Constants.ORIGIN_PLAYER_PACKAGE to R.string.package_origin_player,
+        Constants.VIVO_SHARE_PACKAGE to R.string.package_vivo_share
     )
 
     /** Пакеты-плагины, которые в UI объединяются с родительским приложением. */

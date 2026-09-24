@@ -118,4 +118,9 @@
     <string name="island_apps_built_in_badge">Встроено</string>
     <string name="island_apps_grant_permission">Предоставить доступ</string>
     <string name="island_apps_empty">Приложения не найдены</string>
+
+    <!-- Vivo Share -->
+    <string name="package_vivo_share">Vivo Share</string>
+    <string name="hook_vivo_share_no_timeout_title">Отключение автовыключения через 10 минут</string>
+    <string name="hook_vivo_share_no_timeout_description">Предотвращает автоматическое выключение Vivo Share через 10 минут работы</string>
 </resources>

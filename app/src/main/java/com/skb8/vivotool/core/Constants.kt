@@ -31,4 +31,7 @@ object Constants {
 
     /** Ключ настройки списка кастомных приложений для острова (Set<String>). */
     const val ISLAND_APPS_KEY = "hook_origin_player_island_apps"
+
+    /** Пакет Vivo Share. */
+    const val VIVO_SHARE_PACKAGE = "com.vivo.share"
 }
