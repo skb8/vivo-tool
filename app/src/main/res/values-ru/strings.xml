@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="module_description">Модульный набор хуков для прошивок Vivo/Funtouch OS. Хуки включаются по отдельности в приложении.</string>
+    <string name="module_description">Модульный набор хуков для прошивки Origin OS 5. Хуки включаются по отдельности в приложении.</string>
 
     <!-- Общие действия -->
     <string name="action_back">Назад</string>

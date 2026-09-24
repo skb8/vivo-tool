@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Vivo Tool</string>
-    <string name="module_description">A modular set of hooks for Vivo/Funtouch OS firmware. Hooks are toggled individually inside the app.</string>
+    <string name="module_description">A modular set of hooks for Origin OS 5 firmware. Hooks are toggled individually inside the app.</string>
 
     <!-- Common actions -->
     <string name="action_back">Back</string>
