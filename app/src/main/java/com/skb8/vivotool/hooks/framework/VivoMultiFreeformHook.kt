@@ -6,7 +6,7 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
-import de.robv.android.xposed.XposedHelpers
+import com.skb8.vivotool.core.setField
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -126,7 +126,7 @@ object VivoMultiFreeformHook : BaseHook() {
                     if (targetIndex in visibleList.indices) {
                         val (task, topActivity) = visibleList[targetIndex]
                         try {
-                            XposedHelpers.setBooleanField(task, "mFreeFormLayerBoost", false)
+                            task.setField("mFreeFormLayerBoost", false)
                         } catch (_: Throwable) {}
                         val appToken = topActivity.fieldOrNull("appToken") as? IBinder
                         if (appToken != null) {

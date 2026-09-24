@@ -1,30 +1,22 @@
 package com.skb8.vivotool.core
 
-import com.skb8.vivotool.BuildConfig
-import de.robv.android.xposed.XSharedPreferences
+import android.content.SharedPreferences
 
 /**
  * Чтение настроек изнутри процессов с хуками.
  *
- * Настройки пишет UI приложения (см. `settings/AppSettings`) в режиме
- * MODE_WORLD_READABLE, LSPosed отдаёт их модулю через [XSharedPreferences].
+ * В современном LibXposed настройки читаются через RemotePreferences от XposedInterface.
  */
 internal object HookPrefs {
 
-    private val prefs: XSharedPreferences by lazy {
-        XSharedPreferences(BuildConfig.APPLICATION_ID, Constants.PREFS_NAME).apply {
-            makeWorldReadable()
-        }
+    @Volatile
+    private var remotePrefs: SharedPreferences? = null
+
+    fun init(prefs: SharedPreferences?) {
+        remotePrefs = prefs
     }
 
-    private fun snapshot(): XSharedPreferences? = try {
-        prefs.apply {
-            if (hasFileChanged()) reload()
-        }
-    } catch (t: Throwable) {
-        XLog.e("Не удалось прочитать настройки модуля", t)
-        null
-    }
+    private fun snapshot(): SharedPreferences? = remotePrefs
 
     fun isEnabled(hook: BaseHook): Boolean =
         snapshot()?.getBoolean(Constants.enabledKey(hook.id), hook.enabledByDefault)

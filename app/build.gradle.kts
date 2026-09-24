@@ -77,7 +77,9 @@ abstract class GenerateXposedMetadata : DefaultTask() {
                 appendLine("versionCode=${moduleVersionCode.get()}")
                 appendLine("author=${moduleAuthor.get()}")
                 appendLine("description=${moduleDescription.get()}")
-                appendLine("minApi=${minApi.get()}")
+                appendLine("minApiVersion=${minApi.get()}")
+                appendLine("targetApiVersion=102")
+                appendLine("staticScope=false")
             }
         )
     }
@@ -130,8 +132,8 @@ val generateXposedMetadata = tasks.register<GenerateXposedMetadata>("generateXpo
     moduleVersion.set(appVersionName)
     moduleVersionCode.set(appVersionCode)
     moduleAuthor.set("skb8")
-    moduleDescription.set("A modular set of hooks for Vivo firmware (LSPosed)")
-    minApi.set(93)
+    moduleDescription.set("A modular set of hooks for Vivo firmware (Vector/LibXposed)")
+    minApi.set(101)
 
     resDir.set(layout.buildDirectory.dir("generated/xposed/res"))
     javaResourcesDir.set(layout.buildDirectory.dir("generated/xposed/resources"))
@@ -216,7 +218,8 @@ tasks.named("preBuild") {
 }
 
 dependencies {
-    compileOnly(libs.xposed.api)
+    compileOnly(libs.libxposed.api)
+    implementation(libs.libxposed.service)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -78,7 +78,10 @@ object XposedScopeManager {
         }
         shouldForceRefresh = false
 
-        val scoped = readActiveScopeFromDb(context)
+        val serviceScope = ServiceBridge.xposedService?.let { service ->
+            runCatching { service.scope?.toSet() }.getOrNull()
+        }
+        val scoped = serviceScope ?: readActiveScopeFromDb(context)
         val newState = if (scoped != null) {
             val missing = findMissingApps(apps, scoped)
             ScopeCheckState.Success(scoped, missing)

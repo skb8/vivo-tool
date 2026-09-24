@@ -1,24 +1,23 @@
 package com.skb8.vivotool.core
 
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
-import com.skb8.vivotool.BuildConfig
-import de.robv.android.xposed.XSharedPreferences
 
 /**
  * Чтение картинок изнутри процессов с хуками.
  *
- * Картинки лежат в world-readable `SharedPreferences` в виде base64 — это
- * единственный канал, который LSPosed гарантированно отдаёт модулю в чужом
- * процессе (файлы в каталоге данных модуля чужому процессу недоступны).
+ * Картинки лежат в виде base64 в RemotePreferences, предоставляемых современным
+ * XposedInterface (getRemotePreferences).
  */
 internal object HookImages {
 
-    private val prefs: XSharedPreferences by lazy {
-        XSharedPreferences(BuildConfig.APPLICATION_ID, Constants.IMAGE_PREFS_NAME).apply {
-            makeWorldReadable()
-        }
+    @Volatile
+    private var prefs: SharedPreferences? = null
+
+    fun init(imagePrefs: SharedPreferences?) {
+        prefs = imagePrefs
     }
 
     private var cachedKey: String? = null
@@ -28,14 +27,7 @@ internal object HookImages {
 
     /** Сырые байты картинки или null, если пользователь ничего не выбрал. */
     fun bytes(key: String): ByteArray? = synchronized(this) {
-        val store = try {
-            prefs.apply {
-                if (cachedKey == null || hasFileChanged()) reload()
-            }
-        } catch (t: Throwable) {
-            XLog.e("Не удалось прочитать хранилище картинок", t)
-            return null
-        }
+        val store = prefs ?: return null
 
         val stamp = store.getLong(ImageKeys.updatedKey(key), 0L)
         if (stamp == 0L) {

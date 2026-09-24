@@ -6,13 +6,13 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.XLog
 
+import com.skb8.vivotool.core.ServiceBridge
+
 /**
  * Настройки со стороны приложения.
  *
- * Файл открывается в режиме MODE_WORLD_READABLE: только так процессы с хуками
- * смогут прочитать его через `XSharedPreferences`. Если LSPosed не активировал
- * модуль, система запретит такой режим — тогда используется приватный файл,
- * а UI показывает предупреждение ([isSharedWithHooks] == false).
+ * Настройки сохраняются локально в SharedPreferences и синхронизируются с RemotePreferences
+ * через [ServiceBridge], если сервис Vector/LibXposed подключен.
  */
 class AppSettings(private val context: Context) {
 
@@ -29,13 +29,38 @@ class AppSettings(private val context: Context) {
 
     /** Видны ли настройки процессам с хуками. */
     val isSharedWithHooks: Boolean
-        get() = WorldReadable.isReadable(context, Constants.PREFS_NAME)
+        get() = ServiceBridge.isConnected || WorldReadable.isReadable(context, Constants.PREFS_NAME)
+
+    fun syncToRemote(remote: SharedPreferences) {
+        try {
+            val editor = remote.edit()
+            for ((k, v) in prefs.all) {
+                when (v) {
+                    is Boolean -> editor.putBoolean(k, v)
+                    is Int -> editor.putInt(k, v)
+                    is Long -> editor.putLong(k, v)
+                    is Float -> editor.putFloat(k, v)
+                    is String -> editor.putString(k, v)
+                    is Set<*> -> {
+                        @Suppress("UNCHECKED_CAST")
+                        editor.putStringSet(k, v as? Set<String>)
+                    }
+                }
+            }
+            editor.apply()
+            XLog.i("Настройки успешно синхронизированы с RemotePreferences")
+        } catch (t: Throwable) {
+            XLog.e("Не удалось синхронизировать настройки с RemotePreferences", t)
+        }
+    }
 
     fun isEnabled(hook: BaseHook): Boolean =
         prefs.getBoolean(Constants.enabledKey(hook.id), hook.enabledByDefault)
 
     fun setEnabled(hook: BaseHook, enabled: Boolean) {
-        prefs.edit().putBoolean(Constants.enabledKey(hook.id), enabled).commit()
+        val key = Constants.enabledKey(hook.id)
+        prefs.edit().putBoolean(key, enabled).commit()
+        ServiceBridge.remotePrefs?.edit()?.putBoolean(key, enabled)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
@@ -43,6 +68,7 @@ class AppSettings(private val context: Context) {
 
     fun setBoolean(key: String, value: Boolean) {
         prefs.edit().putBoolean(key, value).commit()
+        ServiceBridge.remotePrefs?.edit()?.putBoolean(key, value)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
@@ -50,6 +76,7 @@ class AppSettings(private val context: Context) {
 
     fun setInt(key: String, value: Int) {
         prefs.edit().putInt(key, value).commit()
+        ServiceBridge.remotePrefs?.edit()?.putInt(key, value)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
@@ -65,6 +92,7 @@ class AppSettings(private val context: Context) {
 
     fun setStringSet(key: String, value: Set<String>) {
         prefs.edit().putStringSet(key, value).commit()
+        ServiceBridge.remotePrefs?.edit()?.putStringSet(key, value)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
@@ -76,6 +104,7 @@ class AppSettings(private val context: Context) {
 
     fun remove(key: String) {
         prefs.edit().remove(key).commit()
+        ServiceBridge.remotePrefs?.edit()?.remove(key)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 
@@ -89,8 +118,13 @@ class AppSettings(private val context: Context) {
     /** Удаляет все настройки с указанным префиксом. */
     fun removeWithPrefix(prefix: String) {
         val editor = prefs.edit()
-        prefs.all.keys.filter { it.startsWith(prefix) }.forEach { editor.remove(it) }
+        val remoteEditor = ServiceBridge.remotePrefs?.edit()
+        prefs.all.keys.filter { it.startsWith(prefix) }.forEach {
+            editor.remove(it)
+            remoteEditor?.remove(it)
+        }
         editor.commit()
+        remoteEditor?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
     }
 }

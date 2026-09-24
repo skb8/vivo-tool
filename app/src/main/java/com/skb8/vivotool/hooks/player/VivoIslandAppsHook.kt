@@ -6,7 +6,8 @@ import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
-import de.robv.android.xposed.XposedHelpers
+import com.skb8.vivotool.core.getField
+import com.skb8.vivotool.core.getStaticField
 
 /**
  * Хук для плеера Origin (com.vivo.musicwidgetmix):
@@ -84,7 +85,7 @@ object VivoIslandAppsHook : BaseHook() {
                 if (customApps.isNotEmpty()) {
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val list = XposedHelpers.getObjectField(param.thisObject, "f15026d") as? MutableList<String>
+                        val list = param.thisObject?.getField("f15026d") as? MutableList<String>
                         list?.let {
                             for (pkg in customApps) {
                                 if (!it.contains(pkg)) it.add(pkg)
@@ -102,7 +103,7 @@ object VivoIslandAppsHook : BaseHook() {
                 if (customApps.isNotEmpty()) {
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val list = XposedHelpers.getObjectField(param.thisObject, "f15023a") as? MutableList<String>
+                        val list = param.thisObject?.getField("f15023a") as? MutableList<String>
                         list?.let {
                             for (pkg in customApps) {
                                 if (!it.contains(pkg)) it.add(pkg)
@@ -120,7 +121,7 @@ object VivoIslandAppsHook : BaseHook() {
                 if (customApps.isNotEmpty()) {
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val list = XposedHelpers.getObjectField(param.thisObject, "f15024b") as? MutableList<String>
+                        val list = param.thisObject?.getField("f15024b") as? MutableList<String>
                         list?.let {
                             for (pkg in customApps) {
                                 if (!it.contains(pkg)) it.add(pkg)
@@ -224,10 +225,10 @@ object VivoIslandAppsHook : BaseHook() {
             clazz.hookAfter("onCreate") { param ->
                 val customApps = HookPrefs.getIslandApps()
                 if (customApps.isNotEmpty()) {
-                    val appClass = param.thisObject.javaClass
+                    val appClass = param.thisObject?.javaClass ?: return@hookAfter
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val f8509g0 = XposedHelpers.getStaticObjectField(appClass, "f8509g0") as? MutableList<String>
+                        val f8509g0 = appClass.getStaticField("f8509g0") as? MutableList<String>
                         f8509g0?.let {
                             for (pkg in customApps) {
                                 if (!it.contains(pkg)) it.add(pkg)
@@ -237,7 +238,7 @@ object VivoIslandAppsHook : BaseHook() {
 
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val f8510h0 = XposedHelpers.getStaticObjectField(appClass, "f8510h0") as? MutableList<String>
+                        val f8510h0 = appClass.getStaticField("f8510h0") as? MutableList<String>
                         f8510h0?.let {
                             for (pkg in customApps) {
                                 if (!it.contains(pkg)) it.add(pkg)

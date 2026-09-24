@@ -10,11 +10,11 @@ package com.skb8.vivotool.core
 object ModuleStatus {
 
     @JvmStatic
-    fun isActive(): Boolean = false
+    fun isActive(): Boolean = ServiceBridge.isConnected
 
     @JvmStatic
-    fun xposedApiVersion(): Int = -1
+    fun xposedApiVersion(): Int = ServiceBridge.xposedService?.apiVersion ?: -1
 
     @JvmStatic
-    fun frameworkName(): String = "unknown"
+    fun frameworkName(): String = ServiceBridge.frameworkName ?: "unknown"
 }

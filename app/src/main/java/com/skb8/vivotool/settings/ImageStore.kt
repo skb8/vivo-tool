@@ -30,15 +30,37 @@ object ImageStore {
         WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
     }
 
+    fun syncToRemote(context: Context, remote: SharedPreferences) {
+        try {
+            val editor = remote.edit()
+            for ((k, v) in prefs(context).all) {
+                when (v) {
+                    is String -> editor.putString(k, v)
+                    is Long -> editor.putLong(k, v)
+                }
+            }
+            editor.apply()
+            XLog.i("Хранилище картинок синхронизировано с RemotePreferences")
+        } catch (t: Throwable) {
+            XLog.e("Не удалось синхронизировать хранилище картинок с RemotePreferences", t)
+        }
+    }
+
     /** Сохраняет картинку. Возвращает false, если не удалось сжать или записать. */
     fun save(context: Context, key: String, bitmap: Bitmap): Boolean {
         val bytes = compress(bitmap) ?: return false
         return try {
+            val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+            val stamp = System.currentTimeMillis()
             val saved = prefs(context).edit()
-                .putString(key, Base64.encodeToString(bytes, Base64.NO_WRAP))
-                .putLong(ImageKeys.updatedKey(key), System.currentTimeMillis())
+                .putString(key, base64)
+                .putLong(ImageKeys.updatedKey(key), stamp)
                 .commit()
             if (saved) {
+                com.skb8.vivotool.core.ServiceBridge.remoteImagePrefs?.edit()
+                    ?.putString(key, base64)
+                    ?.putLong(ImageKeys.updatedKey(key), stamp)
+                    ?.apply()
                 WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
             }
             saved
@@ -50,10 +72,15 @@ object ImageStore {
 
     /** Удаляет картинку — целевое приложение вернётся к оригинальному ресурсу. */
     fun clear(context: Context, key: String) {
+        val stamp = System.currentTimeMillis()
         prefs(context).edit()
             .remove(key)
-            .remove(ImageKeys.updatedKey(key))
+            .putLong(ImageKeys.updatedKey(key), stamp)
             .commit()
+        com.skb8.vivotool.core.ServiceBridge.remoteImagePrefs?.edit()
+            ?.remove(key)
+            ?.putLong(ImageKeys.updatedKey(key), stamp)
+            ?.apply()
         WorldReadable.fix(context, Constants.IMAGE_PREFS_NAME)
     }
 

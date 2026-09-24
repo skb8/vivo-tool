@@ -2,18 +2,15 @@ package com.skb8.vivotool.core
 
 import android.os.Build
 import androidx.annotation.StringRes
-import de.robv.android.xposed.IXposedHookZygoteInit
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedInterface
+import java.lang.reflect.Constructor
+import java.lang.reflect.Executable
 import java.lang.reflect.Member
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 /**
- * Базовый класс для всех хуков.
+ * Базовый класс для всех хуков (LibXposed modern API).
  *
  * Чтобы добавить хук, создайте наследника в пакете `com.skb8.vivotool.hooks`,
  * зарегистрируйте его в [HookRegistry] и добавьте целевой пакет в `app/module-scope.txt`.
@@ -63,28 +60,20 @@ abstract class BaseHook {
     /** Максимальная поддерживаемая версия Android (API level). */
     open val maxSdk: Int = Int.MAX_VALUE
 
-    private var loadPackageParam: XC_LoadPackage.LoadPackageParam? = null
-
-    /** Параметры загрузки текущего пакета. Доступны только внутри [onHook]. */
-    protected val param: XC_LoadPackage.LoadPackageParam
-        get() = requireNotNull(loadPackageParam) { "param доступен только внутри onHook()" }
+    internal var xposed: XposedInterface? = null
+    internal var classLoaderInternal: ClassLoader? = null
+    internal var hookedPackageInternal: String? = null
 
     /** ClassLoader приложения, в которое внедряется хук. */
     protected val classLoader: ClassLoader
-        get() = param.classLoader
+        get() = requireNotNull(classLoaderInternal) { "classLoader доступен только внутри onHook()" }
 
     /** Пакет приложения, в которое внедряется хук. */
     protected val hookedPackage: String
-        get() = param.packageName
+        get() = requireNotNull(hookedPackageInternal) { "hookedPackage доступен только внутри onHook()" }
 
     /** Собственно логика хука. Исключения перехватываются и логируются. */
     protected abstract fun onHook()
-
-    /**
-     * Хуки на стадии Zygote (для ресурсов и системных классов).
-     * Вызывается один раз при старте, до [onHook], и не зависит от настроек.
-     */
-    open fun onZygote(startupParam: IXposedHookZygoteInit.StartupParam) = Unit
 
     /** Подходит ли хук текущей версии Android. */
     fun isSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt in minSdk..maxSdk
@@ -93,13 +82,15 @@ abstract class BaseHook {
     fun matches(packageName: String): Boolean =
         Constants.ALL_PACKAGES in targetPackages || packageName in targetPackages
 
-    internal fun applyTo(lpparam: XC_LoadPackage.LoadPackageParam) {
-        loadPackageParam = lpparam
+    internal fun applyTo(xposedInstance: XposedInterface, pkgName: String, cl: ClassLoader) {
+        this.xposed = xposedInstance
+        this.hookedPackageInternal = pkgName
+        this.classLoaderInternal = cl
         try {
             onHook()
-            XLog.i("Хук '$id' применён к ${lpparam.packageName}")
+            XLog.i("Хук '$id' применён к $pkgName")
         } catch (t: Throwable) {
-            XLog.e("Хук '$id' упал на ${lpparam.packageName}", t)
+            XLog.e("Хук '$id' упал на $pkgName", t)
         }
     }
 
@@ -109,22 +100,22 @@ abstract class BaseHook {
 
     /** Находит класс или бросает исключение (будет поймано в [applyTo]). */
     protected fun findClass(className: String, loader: ClassLoader = classLoader): Class<*> =
-        XposedHelpers.findClass(className, loader)
+        Class.forName(className, false, loader)
 
     /** Находит класс или возвращает null, если его нет. */
     protected fun findClassOrNull(className: String, loader: ClassLoader = classLoader): Class<*>? =
-        XposedHelpers.findClassIfExists(className, loader)
+        try {
+            Class.forName(className, false, loader)
+        } catch (_: Throwable) {
+            null
+        }
 
     /** Первый существующий класс из списка — удобно для разных версий прошивки. */
     protected fun findFirstClass(vararg classNames: String, loader: ClassLoader = classLoader): Class<*>? =
-        classNames.firstNotNullOfOrNull { XposedHelpers.findClassIfExists(it, loader) }
+        classNames.firstNotNullOfOrNull { findClassOrNull(it, loader) }
 
     /**
      * Все неабстрактные реализации метода во всей иерархии класса.
-     *
-     * Нужно, когда неизвестно, в каком классе прошивки метод объявлен, или когда
-     * он переопределён и вызывается через `super`: тогда подменять нужно каждую
-     * реализацию. `hookAll*` так не умеет — он видит только объявленные в классе.
      */
     protected fun Class<*>.methodsInHierarchy(
         name: String,
@@ -147,7 +138,6 @@ abstract class BaseHook {
                     (returnType == null || method.returnType == returnType) &&
                     !Modifier.isAbstract(method.modifiers)
             }
-
             next = try {
                 clazz.superclass
             } catch (t: Throwable) {
@@ -161,85 +151,111 @@ abstract class BaseHook {
     // Хуки методов
     // ---------------------------------------------------------------------
 
+    fun interface Unhook {
+        fun unhook()
+    }
+
     /** Хук перед выполнением метода. */
     protected fun Class<*>.hookBefore(
         methodName: String,
         vararg parameterTypes: Any?,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): XC_MethodHook.Unhook? = hookMethod(this, methodName, parameterTypes, beforeCallback(action))
+        action: (HookParam) -> Unit
+    ): Unhook? = hookMethod(this, methodName, parameterTypes) { exec ->
+        hookBeforeExecutable(exec, action)
+    }
 
     /** Хук после выполнения метода. */
     protected fun Class<*>.hookAfter(
         methodName: String,
         vararg parameterTypes: Any?,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): XC_MethodHook.Unhook? = hookMethod(this, methodName, parameterTypes, afterCallback(action))
+        action: (HookParam) -> Unit
+    ): Unhook? = hookMethod(this, methodName, parameterTypes) { exec ->
+        hookAfterExecutable(exec, action)
+    }
 
     /** Полная замена тела метода; результат лямбды становится результатом метода. */
     protected fun Class<*>.replace(
         methodName: String,
         vararg parameterTypes: Any?,
-        action: (XC_MethodHook.MethodHookParam) -> Any?
-    ): XC_MethodHook.Unhook? = hookMethod(this, methodName, parameterTypes, replaceCallback(action))
+        action: (HookParam) -> Any?
+    ): Unhook? = hookMethod(this, methodName, parameterTypes) { exec ->
+        replaceExecutable(exec, action)
+    }
 
     /** Метод всегда возвращает указанное значение. */
     protected fun Class<*>.returnConstant(
         methodName: String,
         value: Any?,
         vararg parameterTypes: Any?
-    ): XC_MethodHook.Unhook? =
-        hookMethod(this, methodName, parameterTypes, XC_MethodReplacement.returnConstant(value))
+    ): Unhook? = hookMethod(this, methodName, parameterTypes) { exec ->
+        returnConstantExecutable(exec, value)
+    }
 
     /** Метод становится пустым (ничего не делает). */
     protected fun Class<*>.doNothing(
         methodName: String,
         vararg parameterTypes: Any?
-    ): XC_MethodHook.Unhook? =
-        hookMethod(this, methodName, parameterTypes, XC_MethodReplacement.DO_NOTHING)
+    ): Unhook? = hookMethod(this, methodName, parameterTypes) { exec ->
+        doNothingExecutable(exec)
+    }
 
     /**
      * Метод не выполняется вообще: возвращается нейтральное значение под его
-     * тип (`null`, `false`, `0`). Безопаснее, чем `doNothing`, когда сигнатура
-     * метода в прошивке неизвестна.
+     * тип (`null`, `false`, `0`).
      */
-    protected fun Class<*>.skipAll(methodName: String): Set<XC_MethodHook.Unhook> =
+    protected fun Class<*>.skipAll(methodName: String): Set<Unhook> =
         hookAllBefore(methodName) { param -> param.result = neutralResult(param.method) }
 
     /** Хук всех перегрузок метода — до выполнения. */
     protected fun Class<*>.hookAllBefore(
         methodName: String,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): Set<XC_MethodHook.Unhook> = hookAll(this, methodName, beforeCallback(action))
+        action: (HookParam) -> Unit
+    ): Set<Unhook> = hookAllMethods(this, methodName) { exec ->
+        hookBeforeExecutable(exec, action)
+    }
 
     /** Хук всех перегрузок метода — после выполнения. */
     protected fun Class<*>.hookAllAfter(
         methodName: String,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): Set<XC_MethodHook.Unhook> = hookAll(this, methodName, afterCallback(action))
+        action: (HookParam) -> Unit
+    ): Set<Unhook> = hookAllMethods(this, methodName) { exec ->
+        hookAfterExecutable(exec, action)
+    }
 
     /** Замена всех перегрузок метода. */
     protected fun Class<*>.replaceAll(
         methodName: String,
-        action: (XC_MethodHook.MethodHookParam) -> Any?
-    ): Set<XC_MethodHook.Unhook> = hookAll(this, methodName, replaceCallback(action))
+        action: (HookParam) -> Any?
+    ): Set<Unhook> = hookAllMethods(this, methodName) { exec ->
+        replaceExecutable(exec, action)
+    }
 
     /** Хук конструктора после выполнения. */
     protected fun Class<*>.hookConstructorAfter(
         vararg parameterTypes: Any?,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): XC_MethodHook.Unhook? = hookConstructor(this, parameterTypes, afterCallback(action))
+        action: (HookParam) -> Unit
+    ): Unhook? = hookConstructor(this, parameterTypes) { exec ->
+        hookAfterExecutable(exec, action)
+    }
 
     /** Хук конструктора до выполнения. */
     protected fun Class<*>.hookConstructorBefore(
         vararg parameterTypes: Any?,
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): XC_MethodHook.Unhook? = hookConstructor(this, parameterTypes, beforeCallback(action))
+        action: (HookParam) -> Unit
+    ): Unhook? = hookConstructor(this, parameterTypes) { exec ->
+        hookBeforeExecutable(exec, action)
+    }
 
     /** Хук всех конструкторов после выполнения. */
     protected fun Class<*>.hookAllConstructorsAfter(
-        action: (XC_MethodHook.MethodHookParam) -> Unit
-    ): Set<XC_MethodHook.Unhook> = safeHookSet("конструкторы ${this.name}") {
-        XposedBridge.hookAllConstructors(this, afterCallback(action))
+        action: (HookParam) -> Unit
+    ): Set<Unhook> {
+        val unhooks = mutableSetOf<Unhook>()
+        for (ctor in declaredConstructors) {
+            ctor.isAccessible = true
+            hookAfterExecutable(ctor, action)?.let { unhooks.add(it) }
+        }
+        return unhooks
     }
 
     /**
@@ -247,19 +263,18 @@ abstract class BaseHook {
      * удобно, когда нужен готовый Context.
      */
     protected fun afterApplicationCreated(action: (android.app.Application) -> Unit) {
-        findClass("android.app.Application").hookAfter("onCreate") { hookParam ->
+        val appClass = findClassOrNull("android.app.Application") ?: return
+        appClass.hookAfter("onCreate") { hookParam ->
             (hookParam.thisObject as? android.app.Application)?.let(action)
         }
     }
 
     /**
      * Подменяет уже найденный через рефлексию метод: он не выполняется,
-     * а сразу возвращает [value]. Удобно, когда метод нашли обходом иерархии.
+     * а сразу возвращает [value].
      */
-    protected fun Method.replaceWithConstant(value: Any?): XC_MethodHook.Unhook? =
-        safeHook("$declaringClass.$name") {
-            XposedBridge.hookMethod(this, XC_MethodReplacement.returnConstant(value))
-        }
+    protected fun Method.replaceWithConstant(value: Any?): Unhook? =
+        returnConstantExecutable(this, value)
 
     // ---------------------------------------------------------------------
     // Чтение объектов целевого приложения
@@ -267,7 +282,7 @@ abstract class BaseHook {
 
     /** Значение поля объекта или null, если поля нет. */
     protected fun Any.fieldOrNull(name: String): Any? = try {
-        XposedHelpers.getObjectField(this, name)
+        getField(name)
     } catch (t: Throwable) {
         XLog.d("[$id] нет поля $name в ${javaClass.name}: ${t.message}")
         null
@@ -278,7 +293,7 @@ abstract class BaseHook {
      * Приватные методы тоже вызываются.
      */
     protected fun Any.callOrNull(name: String, vararg args: Any?): Any? = try {
-        XposedHelpers.callMethod(this, name, *args)
+        callMethod(name, *args)
     } catch (t: Throwable) {
         XLog.d("[$id] вызов $name у ${javaClass.name} не удался: ${t.message}")
         null
@@ -300,83 +315,164 @@ abstract class BaseHook {
         }
 
     // ---------------------------------------------------------------------
-    // Внутренняя реализация
+    // Внутренняя реализация на базе XposedInterface
     // ---------------------------------------------------------------------
+
+    private fun resolveTypes(types: Array<out Any?>, loader: ClassLoader): Array<Class<*>> {
+        return types.map { t ->
+            when (t) {
+                is Class<*> -> t
+                is String -> findClass(t, loader)
+                else -> throw IllegalArgumentException("Неподдерживаемый тип параметра: $t")
+            }
+        }.toTypedArray()
+    }
 
     private fun hookMethod(
         clazz: Class<*>,
         methodName: String,
         parameterTypes: Array<out Any?>,
-        callback: XC_MethodHook
-    ): XC_MethodHook.Unhook? = safeHook("${clazz.name}.$methodName") {
-        XposedHelpers.findAndHookMethod(clazz, methodName, *parameterTypes, callback)
+        hookFunc: (Executable) -> Unhook?
+    ): Unhook? = try {
+        val resolved = resolveTypes(parameterTypes, clazz.classLoader ?: classLoader)
+        var c: Class<*>? = clazz
+        var method: Method? = null
+        while (c != null && c != Any::class.java) {
+            try {
+                method = c.getDeclaredMethod(methodName, *resolved)
+                break
+            } catch (_: NoSuchMethodException) {
+                c = c.superclass
+            }
+        }
+        if (method == null) {
+            throw NoSuchMethodException("Метод $methodName не найден в ${clazz.name}")
+        }
+        method.isAccessible = true
+        hookFunc(method)
+    } catch (t: Throwable) {
+        XLog.e("[$id] не удалось хукнуть ${clazz.name}.$methodName", t)
+        null
     }
 
     private fun hookConstructor(
         clazz: Class<*>,
         parameterTypes: Array<out Any?>,
-        callback: XC_MethodHook
-    ): XC_MethodHook.Unhook? = safeHook("${clazz.name}.<init>") {
-        XposedHelpers.findAndHookConstructor(clazz, *parameterTypes, callback)
-    }
-
-    private fun hookAll(
-        clazz: Class<*>,
-        methodName: String,
-        callback: XC_MethodHook
-    ): Set<XC_MethodHook.Unhook> = safeHookSet("${clazz.name}.$methodName") {
-        XposedBridge.hookAllMethods(clazz, methodName, callback)
-    }
-
-    private inline fun safeHook(
-        target: String,
-        block: () -> XC_MethodHook.Unhook?
-    ): XC_MethodHook.Unhook? = try {
-        block()
+        hookFunc: (Executable) -> Unhook?
+    ): Unhook? = try {
+        val resolved = resolveTypes(parameterTypes, clazz.classLoader ?: classLoader)
+        val ctor = clazz.getDeclaredConstructor(*resolved)
+        ctor.isAccessible = true
+        hookFunc(ctor)
     } catch (t: Throwable) {
-        XLog.e("[$id] не удалось хукнуть $target", t)
+        XLog.e("[$id] не удалось хукнуть конструктор ${clazz.name}", t)
         null
     }
 
-    private inline fun safeHookSet(
-        target: String,
-        block: () -> Set<XC_MethodHook.Unhook>
-    ): Set<XC_MethodHook.Unhook> = try {
-        block()
-    } catch (t: Throwable) {
-        XLog.e("[$id] не удалось хукнуть $target", t)
-        emptySet()
+    private fun hookAllMethods(
+        clazz: Class<*>,
+        methodName: String,
+        hookFunc: (Executable) -> Unhook?
+    ): Set<Unhook> {
+        val unhooks = mutableSetOf<Unhook>()
+        var c: Class<*>? = clazz
+        while (c != null && c != Any::class.java) {
+            try {
+                for (m in c.declaredMethods) {
+                    if (m.name == methodName) {
+                        m.isAccessible = true
+                        hookFunc(m)?.let { unhooks.add(it) }
+                    }
+                }
+            } catch (t: Throwable) {
+                XLog.e("[$id] ошибка перебора методов ${c.name}", t)
+            }
+            c = c.superclass
+        }
+        return unhooks
     }
 
-    private fun beforeCallback(action: (XC_MethodHook.MethodHookParam) -> Unit): XC_MethodHook =
-        object : XC_MethodHook() {
-            override fun beforeHookedMethod(param: MethodHookParam) {
-                try {
-                    action(param)
-                } catch (t: Throwable) {
-                    XLog.e("[$id] ошибка в beforeHookedMethod", t)
-                }
-            }
+    private fun hookExecutable(
+        executable: Executable,
+        interceptor: (XposedInterface.Chain) -> Any?
+    ): Unhook? {
+        val x = xposed ?: run {
+            XLog.e("[$id] XposedInterface не инициализирован для ${executable.name}")
+            return null
         }
+        return try {
+            val handle = x.hook(executable)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept { chain -> interceptor(chain) }
+            Unhook { handle.unhook() }
+        } catch (t: Throwable) {
+            XLog.e("[$id] Ошибка при установке хука на $executable", t)
+            null
+        }
+    }
 
-    private fun afterCallback(action: (XC_MethodHook.MethodHookParam) -> Unit): XC_MethodHook =
-        object : XC_MethodHook() {
-            override fun afterHookedMethod(param: MethodHookParam) {
-                try {
-                    action(param)
-                } catch (t: Throwable) {
-                    XLog.e("[$id] ошибка в afterHookedMethod", t)
-                }
-            }
+    private fun hookBeforeExecutable(
+        executable: Executable,
+        action: (HookParam) -> Unit
+    ): Unhook? = hookExecutable(executable) { chain ->
+        val args = chain.args.toTypedArray()
+        val param = HookParam(chain.executable, chain.thisObject, args)
+        try {
+            action(param)
+        } catch (t: Throwable) {
+            XLog.e("[$id] Ошибка в hookBefore для $executable", t)
         }
+        if (param.hasThrowable) {
+            throw requireNotNull(param.throwable)
+        }
+        if (param.hasResult) {
+            param.result
+        } else if (chain.thisObject != null) {
+            chain.proceedWith(chain.thisObject, param.args)
+        } else {
+            chain.proceed(param.args)
+        }
+    }
 
-    private fun replaceCallback(action: (XC_MethodHook.MethodHookParam) -> Any?): XC_MethodHook =
-        object : XC_MethodReplacement() {
-            override fun replaceHookedMethod(param: MethodHookParam): Any? = try {
-                action(param)
-            } catch (t: Throwable) {
-                XLog.e("[$id] ошибка в replaceHookedMethod", t)
-                null
-            }
+    private fun hookAfterExecutable(
+        executable: Executable,
+        action: (HookParam) -> Unit
+    ): Unhook? = hookExecutable(executable) { chain ->
+        val result = chain.proceed()
+        val args = chain.args.toTypedArray()
+        val param = HookParam(chain.executable, chain.thisObject, args)
+        param.result = result
+        try {
+            action(param)
+        } catch (t: Throwable) {
+            XLog.e("[$id] Ошибка в hookAfter для $executable", t)
         }
+        if (param.hasThrowable) {
+            throw requireNotNull(param.throwable)
+        }
+        param.result
+    }
+
+    private fun replaceExecutable(
+        executable: Executable,
+        action: (HookParam) -> Any?
+    ): Unhook? = hookExecutable(executable) { chain ->
+        val args = chain.args.toTypedArray()
+        val param = HookParam(chain.executable, chain.thisObject, args)
+        try {
+            action(param)
+        } catch (t: Throwable) {
+            XLog.e("[$id] Ошибка в replace для $executable", t)
+            neutralResult(executable)
+        }
+    }
+
+    private fun returnConstantExecutable(
+        executable: Executable,
+        value: Any?
+    ): Unhook? = hookExecutable(executable) { value }
+
+    private fun doNothingExecutable(
+        executable: Executable
+    ): Unhook? = hookExecutable(executable) { null }
 }

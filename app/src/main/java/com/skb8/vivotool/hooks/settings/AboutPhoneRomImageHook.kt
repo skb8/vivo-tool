@@ -7,9 +7,9 @@ import android.graphics.drawable.Drawable
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.HookImages
+import com.skb8.vivotool.core.HookParam
 import com.skb8.vivotool.core.ImageKeys
 import com.skb8.vivotool.core.XLog
-import de.robv.android.xposed.XC_MethodHook
 import java.io.ByteArrayInputStream
 
 /**
@@ -83,7 +83,7 @@ object AboutPhoneRomImageHook : BaseHook() {
         afterApplicationCreated { app -> resolveId(app.resources) }
     }
 
-    private fun onDrawableLoaded(hookParam: XC_MethodHook.MethodHookParam) {
+    private fun onDrawableLoaded(hookParam: HookParam) {
         val res = (hookParam.thisObject as? Resources)
             ?: (hookParam.args.firstNotNullOfOrNull { it as? Resources })
             ?: return

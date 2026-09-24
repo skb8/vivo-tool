@@ -11,10 +11,11 @@
 # дёргается через рефлексию Xposed — оставляем целиком.
 -keep class * extends com.skb8.vivotool.core.BaseHook { *; }
 
-# Xposed API есть только в рантайме (compileOnly), поэтому R8 не должен
+# LibXposed API есть только в рантайме (compileOnly), поэтому R8 не должен
 # ругаться на отсутствующие классы интерфейсов и хелперов.
--keep class de.robv.android.xposed.** { *; }
--dontwarn de.robv.android.xposed.**
+-dontwarn io.github.libxposed.annotation.**
+-keep class io.github.libxposed.api.** { *; }
+-dontwarn io.github.libxposed.api.**
 
 # Читаемые стектрейсы в журнале LSPosed.
 -keepattributes SourceFile,LineNumberTable

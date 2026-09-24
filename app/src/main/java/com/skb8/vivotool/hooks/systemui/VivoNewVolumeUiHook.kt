@@ -5,7 +5,9 @@ import android.os.Build
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.XLog
-import de.robv.android.xposed.XposedHelpers
+import com.skb8.vivotool.core.callMethod
+import com.skb8.vivotool.core.getField
+import com.skb8.vivotool.core.setField
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -86,7 +88,7 @@ object VivoNewVolumeUiHook : BaseHook() {
         // 3. Плагин SystemUI может загружаться через LoadedApk или ContextImpl
         findClassOrNull("android.app.LoadedApk")?.hookAfter("getClassLoader") { hookParam ->
             val loadedApk = hookParam.thisObject ?: return@hookAfter
-            val pkg = XposedHelpers.getObjectField(loadedApk, "mPackageName") as? String
+            val pkg = loadedApk.getField("mPackageName") as? String
             if (pkg == SYSTEM_UI_PLUGIN_PACKAGE || pkg == SYSTEM_UI_PACKAGE) {
                 val cl = hookParam.result as? ClassLoader ?: return@hookAfter
                 hookClassLoader(cl)
@@ -133,7 +135,7 @@ object VivoNewVolumeUiHook : BaseHook() {
         if (dialogClass != null) {
             dialogClass.hookAfter("onCreate", Context::class.java, Context::class.java) { param ->
                 val dialog = param.thisObject ?: return@hookAfter
-                val currentImpl = XposedHelpers.getObjectField(dialog, "mImpl")
+                val currentImpl = dialog.getField("mImpl")
 
                 if (currentImpl != null && currentImpl.javaClass.name.contains("VivoVolumeOldImpl")) {
                     XLog.w("[$id] mImpl остался VivoVolumeOldImpl, заменяем на VivoVolumeNewImpl")
@@ -142,8 +144,8 @@ object VivoNewVolumeUiHook : BaseHook() {
                             val newImpl = newImplClass.getDeclaredConstructor().newInstance()
                             val hostContext = param.args[0] as Context
                             val pluginContext = param.args[1] as Context
-                            XposedHelpers.callMethod(newImpl, "onCreate", hostContext, pluginContext)
-                            XposedHelpers.setObjectField(dialog, "mImpl", newImpl)
+                            newImpl.callMethod("onCreate", hostContext, pluginContext)
+                            dialog.setField("mImpl", newImpl)
                             XLog.i("[$id] mImpl успешно заменён на VivoVolumeNewImpl в onCreate")
                         } catch (t: Throwable) {
                             XLog.e("[$id] Не удалось создать VivoVolumeNewImpl", t)
@@ -157,7 +159,7 @@ object VivoNewVolumeUiHook : BaseHook() {
             // Fallback: перехват init() если onCreate отработал до применения хука
             dialogClass.hookAllBefore("init") { param ->
                 val dialog = param.thisObject ?: return@hookAllBefore
-                val currentImpl = XposedHelpers.getObjectField(dialog, "mImpl")
+                val currentImpl = dialog.getField("mImpl")
                 if (currentImpl != null && currentImpl.javaClass.name.contains("VivoVolumeOldImpl") && newImplClass != null) {
                     try {
                         val contextUtilsClass = findClassOrNull("com.vivo.systemuiplugin.common.utils.ContextUtils", loader)
@@ -166,8 +168,8 @@ object VivoNewVolumeUiHook : BaseHook() {
                         val pluginContext = instance?.callOrNull("getSysuiPluginContext") as? Context
                         if (hostContext != null && pluginContext != null) {
                             val newImpl = newImplClass.getDeclaredConstructor().newInstance()
-                            XposedHelpers.callMethod(newImpl, "onCreate", hostContext, pluginContext)
-                            XposedHelpers.setObjectField(dialog, "mImpl", newImpl)
+                            newImpl.callMethod("onCreate", hostContext, pluginContext)
+                            dialog.setField("mImpl", newImpl)
                             XLog.i("[$id] mImpl успешно заменён на VivoVolumeNewImpl перед init")
                         }
                     } catch (t: Throwable) {

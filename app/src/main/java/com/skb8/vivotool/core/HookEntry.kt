@@ -1,41 +1,47 @@
 package com.skb8.vivotool.core
 
 import com.skb8.vivotool.BuildConfig
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.IXposedHookZygoteInit
-import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface
 
 /**
- * Точка входа модуля. Указана в `META-INF/xposed/java_init.list`
- * и в `assets/xposed_init` (легаси-формат).
+ * Точка входа модуля LibXposed. Указана в `META-INF/xposed/java_init.list`.
  */
-class HookEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
+class HookEntry : XposedModule() {
 
-    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
-        modulePath = startupParam.modulePath
-        HookRegistry.hooks.forEach { hook ->
-            if (!hook.isSupported()) return@forEach
-            try {
-                hook.onZygote(startupParam)
-            } catch (t: Throwable) {
-                XLog.e("Хук '${hook.id}' упал в initZygote", t)
-            }
+    override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
+        XLog.setXposedInterface(this)
+        modulePath = moduleApplicationInfo.sourceDir
+
+        runCatching {
+            HookPrefs.init(getRemotePreferences(Constants.PREFS_NAME))
+            HookImages.init(getRemotePreferences(Constants.IMAGE_PREFS_NAME))
+        }.onFailure { t ->
+            XLog.e("Не удалось инициализировать RemotePreferences", t)
         }
     }
 
-    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        if (lpparam.packageName == BuildConfig.APPLICATION_ID) {
-            hookSelf(lpparam)
+    override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
+        val packageName = param.packageName
+        val classLoader = param.classLoader
+
+        if (packageName == BuildConfig.APPLICATION_ID) {
+            hookSelf(classLoader)
             return
         }
 
-        val hooks = HookRegistry.hooksFor(lpparam.packageName)
+        dispatchHooks(packageName, classLoader)
+    }
+
+    override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
+        dispatchHooks(Constants.SYSTEM_FRAMEWORK, param.classLoader)
+    }
+
+    private fun dispatchHooks(packageName: String, classLoader: ClassLoader) {
+        val hooks = HookRegistry.hooksFor(packageName)
         if (hooks.isEmpty()) return
 
-        XLog.i("Загружены в ${lpparam.packageName}, подходящих хуков: ${hooks.size}")
+        XLog.i("Загружены в $packageName, подходящих хуков: ${hooks.size}")
 
         for (hook in hooks) {
             when {
@@ -45,52 +51,28 @@ class HookEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
                 !HookPrefs.isEnabled(hook) ->
                     XLog.d("Хук '${hook.id}' пропущен: отключён в настройках")
 
-                else -> hook.applyTo(lpparam)
+                else -> hook.applyTo(this, packageName, classLoader)
             }
         }
     }
 
     /** Подмена [ModuleStatus], чтобы UI приложения знал, что модуль активен. */
-    private fun hookSelf(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val statusClass = XposedHelpers.findClassIfExists(
-            ModuleStatus::class.java.name,
-            lpparam.classLoader
-        ) ?: return
+    private fun hookSelf(classLoader: ClassLoader) {
+        val statusClass = runCatching {
+            classLoader.loadClass(ModuleStatus::class.java.name)
+        }.getOrNull() ?: return
 
-        XposedBridge.hookAllMethods(
-            statusClass,
-            "isActive",
-            XC_MethodReplacement.returnConstant(true)
-        )
-        XposedBridge.hookAllMethods(
-            statusClass,
-            "xposedApiVersion",
-            XC_MethodReplacement.returnConstant(XposedBridge.getXposedVersion())
-        )
-        XposedBridge.hookAllMethods(
-            statusClass,
-            "frameworkName",
-            XC_MethodReplacement.returnConstant(detectFramework())
-        )
-    }
-
-    private fun detectFramework(): String {
-        val known = mapOf(
-            "org.matrix.vector.daemon.VectorService" to "Vector",
-            "org.matrix.vector.daemon.VectorDaemon" to "Vector",
-            "org.lsposed.lspd.core.Main" to "LSPosed",
-            "org.lsposed.lspd.service.BridgeService" to "LSPosed",
-            "com.elderdrivers.riru.edxp.core.Main" to "EdXposed",
-            "de.robv.android.xposed.XposedInit" to "Xposed"
-        )
-        for ((className, name) in known) {
-            if (XposedHelpers.findClassIfExists(className, null) != null) return name
+        statusClass.declaredMethods.forEach { method ->
+            when (method.name) {
+                "isActive" -> hook(method).intercept { true }
+                "xposedApiVersion" -> hook(method).intercept { apiVersion }
+                "frameworkName" -> hook(method).intercept { frameworkName }
+            }
         }
-        return "Xposed-совместимый"
     }
 
     companion object {
-        /** Путь к APK модуля — нужен для доступа к своим ресурсам из чужих процессов. */
+        /** Путь к APK модуля. */
         @Volatile
         var modulePath: String? = null
             private set
