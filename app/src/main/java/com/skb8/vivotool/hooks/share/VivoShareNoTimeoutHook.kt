@@ -1,10 +1,13 @@
 package com.skb8.vivotool.hooks.share
 
+import android.content.Context
 import android.os.Parcel
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.XLog
+import java.util.Collections
+import java.util.WeakHashMap
 
 /**
  * Отключение автоматического выключения Vivo Share через 10 минут.
@@ -22,6 +25,7 @@ import com.skb8.vivotool.core.XLog
  *    в `IVivoShareInnerService.Stub.onTransact`, предотвращая вызов из внешних процессов (`:proxy`).
  * 3. Блокирует клиентский вызов `closeVivoShareAfterTenMinutes()` в `IVivoShareInnerService.Stub.Proxy`,
  *    чтобы процесс `:proxy` даже не посылал IPC-запрос при срабатывании таймера/аларма.
+ * 4. Заглушает показ Toast-уведомления об автовыключении через 10 минут при включении из шторки.
  */
 object VivoShareNoTimeoutHook : BaseHook() {
 
@@ -39,6 +43,11 @@ object VivoShareNoTimeoutHook : BaseHook() {
     private const val INNER_SERVICE_STUB_CLASS = "com.vivo.share.service.inner.IVivoShareInnerService\$Stub"
     private const val INNER_SERVICE_PROXY_CLASS = "com.vivo.share.service.inner.IVivoShareInnerService\$Stub\$Proxy"
     private const val SERVICE_POOL_CLASS = "com.vivo.share.services.VivoShareServicePool"
+    private const val TOAST_CLASS = "android.widget.Toast"
+
+    private val suppressedToasts = Collections.synchronizedSet(
+        Collections.newSetFromMap(WeakHashMap<Any, Boolean>())
+    )
 
     override fun onHook() {
         var hookedAny = false
@@ -129,10 +138,102 @@ object VivoShareNoTimeoutHook : BaseHook() {
             }
         }
 
+        // 5. Заглушаем показ Toast при включении Vivo Share
+        hookToast()
+
         if (hookedAny) {
             XLog.i("[$id] Хук против автовыключения Vivo Share успешно применён")
         } else {
             XLog.w("[$id] Не удалось найти целевые классы для хука Vivo Share (возможно другой процесс или версия)")
         }
+    }
+
+    private fun hookToast() {
+        val toastClass = findClassOrNull(TOAST_CLASS) ?: return
+
+        toastClass.hookAfter(
+            "makeText",
+            Context::class.java,
+            CharSequence::class.java,
+            Int::class.javaPrimitiveType
+        ) { param ->
+            val text = param.args[1] as? CharSequence ?: return@hookAfter
+            val context = param.args[0] as? Context
+            val toast = param.result ?: return@hookAfter
+            if (isTimeoutToast(context, text)) {
+                suppressedToasts.add(toast)
+                XLog.i("[$id] Тост об автовыключении перехвачен для заглушения: \"$text\"")
+            }
+        }
+
+        toastClass.hookAfter(
+            "makeText",
+            Context::class.java,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType
+        ) { param ->
+            val resId = param.args[1] as? Int ?: return@hookAfter
+            val context = param.args[0] as? Context
+            val toast = param.result ?: return@hookAfter
+            if (context != null) {
+                val targetId = try {
+                    context.resources.getIdentifier("vivoshare_toast_turn_off_vivoshare", "string", "com.vivo.share")
+                } catch (_: Throwable) {
+                    0
+                }
+                if (targetId != 0 && resId == targetId) {
+                    suppressedToasts.add(toast)
+                    XLog.i("[$id] Тост об автовыключении (по resId=$resId) перехвачен для заглушения")
+                }
+            }
+        }
+
+        toastClass.hookBefore("show") { param ->
+            val toast = param.thisObject ?: return@hookBefore
+            if (suppressedToasts.contains(toast)) {
+                param.result = null
+                XLog.i("[$id] Показ тоста об автовыключении успешно заглушен")
+            }
+        }
+    }
+
+    private fun isTimeoutToast(context: Context?, text: CharSequence): Boolean {
+        val str = text.toString()
+
+        if (context != null) {
+            try {
+                val res = context.resources
+                val targetId = res.getIdentifier("vivoshare_toast_turn_off_vivoshare", "string", "com.vivo.share")
+                if (targetId != 0) {
+                    val appNameId = res.getIdentifier("vivoshare_app_name", "string", "com.vivo.share")
+                    val appName = if (appNameId != 0) res.getString(appNameId) else ""
+                    val fullExpected = try {
+                        res.getString(targetId, appName)
+                    } catch (_: Throwable) {
+                        null
+                    }
+                    if (fullExpected != null && (str == fullExpected || str.contains(fullExpected))) {
+                        return true
+                    }
+
+                    val rawTemplate = res.getString(targetId)
+                    val cleaned = rawTemplate.replace("%1\$s", "").replace("%s", "").trim()
+                    if (cleaned.isNotEmpty() && str.contains(cleaned)) {
+                        return true
+                    }
+                }
+            } catch (t: Throwable) {
+                XLog.d("[$id] Ошибка при проверке строкового ресурса: ${t.message}")
+            }
+        }
+
+        if (str.contains("10")) {
+            val lower = str.lowercase()
+            if (lower.contains("минут") || lower.contains("minute") || lower.contains("分") || lower.contains("minuto")) {
+                return true
+            }
+        }
+
+        return false
     }
 }
