@@ -33,22 +33,43 @@ class AppSettings(private val context: Context) {
 
     fun syncToRemote(remote: SharedPreferences) {
         try {
-            val editor = remote.edit()
-            for ((k, v) in prefs.all) {
-                when (v) {
-                    is Boolean -> editor.putBoolean(k, v)
-                    is Int -> editor.putInt(k, v)
-                    is Long -> editor.putLong(k, v)
-                    is Float -> editor.putFloat(k, v)
-                    is String -> editor.putString(k, v)
-                    is Set<*> -> {
-                        @Suppress("UNCHECKED_CAST")
-                        editor.putStringSet(k, v as? Set<String>)
+            val localAll = prefs.all
+            val remoteAll = remote.all
+            if (localAll.isNotEmpty()) {
+                val editor = remote.edit()
+                for ((k, v) in localAll) {
+                    when (v) {
+                        is Boolean -> editor.putBoolean(k, v)
+                        is Int -> editor.putInt(k, v)
+                        is Long -> editor.putLong(k, v)
+                        is Float -> editor.putFloat(k, v)
+                        is String -> editor.putString(k, v)
+                        is Set<*> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            editor.putStringSet(k, v as? Set<String>)
+                        }
                     }
                 }
+                editor.apply()
+                XLog.i("Настройки успешно синхронизированы в RemotePreferences (${localAll.size} записей)")
+            } else if (remoteAll.isNotEmpty()) {
+                val editor = prefs.edit()
+                for ((k, v) in remoteAll) {
+                    when (v) {
+                        is Boolean -> editor.putBoolean(k, v)
+                        is Int -> editor.putInt(k, v)
+                        is Long -> editor.putLong(k, v)
+                        is Float -> editor.putFloat(k, v)
+                        is String -> editor.putString(k, v)
+                        is Set<*> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            editor.putStringSet(k, v as? Set<String>)
+                        }
+                    }
+                }
+                editor.apply()
+                XLog.i("Настройки успешно восстановлены из RemotePreferences (${remoteAll.size} записей)")
             }
-            editor.apply()
-            XLog.i("Настройки успешно синхронизированы с RemotePreferences")
         } catch (t: Throwable) {
             XLog.e("Не удалось синхронизировать настройки с RemotePreferences", t)
         }

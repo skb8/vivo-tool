@@ -17,6 +17,11 @@
 -keep class io.github.libxposed.api.** { *; }
 -dontwarn io.github.libxposed.api.**
 
+# LibXposed Service (IPC и RemotePreferences)
+-keep class io.github.libxposed.service.** { *; }
+-dontwarn io.github.libxposed.service.**
+-keep class com.skb8.vivotool.core.ServiceBridge { *; }
+
 # Читаемые стектрейсы в журнале LSPosed.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

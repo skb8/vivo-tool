@@ -32,15 +32,29 @@ object ImageStore {
 
     fun syncToRemote(context: Context, remote: SharedPreferences) {
         try {
-            val editor = remote.edit()
-            for ((k, v) in prefs(context).all) {
-                when (v) {
-                    is String -> editor.putString(k, v)
-                    is Long -> editor.putLong(k, v)
+            val localAll = prefs(context).all
+            val remoteAll = remote.all
+            if (localAll.isNotEmpty()) {
+                val editor = remote.edit()
+                for ((k, v) in localAll) {
+                    when (v) {
+                        is String -> editor.putString(k, v)
+                        is Long -> editor.putLong(k, v)
+                    }
                 }
+                editor.apply()
+                XLog.i("Хранилище картинок синхронизировано с RemotePreferences")
+            } else if (remoteAll.isNotEmpty()) {
+                val editor = prefs(context).edit()
+                for ((k, v) in remoteAll) {
+                    when (v) {
+                        is String -> editor.putString(k, v)
+                        is Long -> editor.putLong(k, v)
+                    }
+                }
+                editor.apply()
+                XLog.i("Хранилище картинок восстановлено из RemotePreferences")
             }
-            editor.apply()
-            XLog.i("Хранилище картинок синхронизировано с RemotePreferences")
         } catch (t: Throwable) {
             XLog.e("Не удалось синхронизировать хранилище картинок с RemotePreferences", t)
         }

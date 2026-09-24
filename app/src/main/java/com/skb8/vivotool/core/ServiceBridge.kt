@@ -33,7 +33,12 @@ object ServiceBridge {
     val frameworkName: String?
         get() = xposedService?.frameworkName ?: if (isConnected) "Vector" else null
 
+    @Volatile
+    private var isInitialized = false
+
     fun init(context: Context) {
+        if (isInitialized) return
+        isInitialized = true
         XposedServiceHelper.registerListener(object : XposedServiceHelper.OnServiceListener {
             override fun onServiceBind(service: XposedService) {
                 xposedService = service
