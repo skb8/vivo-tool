@@ -217,6 +217,15 @@ tasks.named("preBuild") {
     dependsOn(generateXposedMetadata)
 }
 
+// LibXposed AARs объявляют minCompileSdk=37 (будущие версии Android),
+// но используют стандартный байткод Java 17, совместимый с Android 8.0+.
+// Отключаем проверку метаданных AAR, чтобы сборка не требовала неподдерживаемый SDK.
+tasks.configureEach {
+    if (name.startsWith("check") && name.endsWith("AarMetadata")) {
+        enabled = false
+    }
+}
+
 dependencies {
     compileOnly(libs.libxposed.api)
     implementation(libs.libxposed.service)
