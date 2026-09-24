@@ -51,13 +51,13 @@ object TemplateHook : BaseHook() {
 
         // Все перегрузки метода сразу.
         target.hookAllAfter("onConfigLoaded") { param ->
-            val config = param.thisObject.getField("config")
+            val config = param.thisObject?.getField("config")
             XLog.d("[$id] config = $config")
         }
 
         // Доступ к полям и методам через рефлексию.
         target.hookConstructorAfter { param ->
-            param.thisObject.callMethod("init")
+            param.thisObject?.callMethod("init")
         }
 
         // Код, которому нужен готовый Context приложения.

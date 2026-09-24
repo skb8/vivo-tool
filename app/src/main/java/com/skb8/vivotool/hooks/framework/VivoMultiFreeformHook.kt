@@ -90,7 +90,7 @@ object VivoMultiFreeformHook : BaseHook() {
                     return@hookAllBefore
                 }
 
-                val tasks = param.thisObject.fieldOrNull("mVivoFreeformTasks") as? List<*>
+                val tasks = param.thisObject?.fieldOrNull("mVivoFreeformTasks") as? List<*>
                     ?: return@hookAllBefore
 
                 // Подсчитываем текущие видимые задачи
@@ -98,7 +98,7 @@ object VivoMultiFreeformHook : BaseHook() {
                 for (i in tasks.indices.reversed()) {
                     val vTask = tasks[i] ?: continue
                     val task = vTask.callOrNull("getTask") ?: continue
-                    val isVisible = param.thisObject.callOrNull("isVisibleFreeformTask", task) as? Boolean ?: false
+                    val isVisible = param.thisObject?.callOrNull("isVisibleFreeformTask", task) as? Boolean ?: false
                     if (isVisible) {
                         val topActivity = task.callOrNull("getTopMostActivity")
                         if (topActivity != null) {
@@ -118,7 +118,7 @@ object VivoMultiFreeformHook : BaseHook() {
 
                 // Лимит превышен: сворачиваем самое старое окно (находящееся в конце списка)
                 val excess = visibleList.size - threshold
-                val wmService = param.thisObject.fieldOrNull("mWmService")
+                val wmService = param.thisObject?.fieldOrNull("mWmService")
                 val atmService = wmService?.fieldOrNull("mAtmService")
 
                 for (idx in 0 until excess) {
