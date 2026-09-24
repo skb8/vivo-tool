@@ -44,7 +44,8 @@ object CameraZeissHook : BaseHook() {
     val REQUIRED_FEATURES: Map<String, Boolean> = mapOf(
         "isSupportZeissColor" to true,
         "isSupportColorfulButton" to false,
-        "isSupportPortraitFormulaConfig" to true
+        "isSupportPortraitFormulaConfig" to true,
+        "isCameraSignedByZeiss" to true
     )
 
     private const val DEVICE_UTIL_CLASS = "com.android.camera.utils.DeviceUtil"
@@ -70,18 +71,37 @@ object CameraZeissHook : BaseHook() {
         val clazz = findClassOrNull(DEVICE_UTIL_CLASS)
         if (clazz == null) {
             XLog.w("[$id] класс $DEVICE_UTIL_CLASS не найден")
-            return
+        } else {
+            SERIES_CHECKS.forEach { name ->
+                val hooks = clazz.hookAllBefore(name) { param ->
+                    if (calledFromWatermark()) param.result = false
+                }
+                if (hooks.isEmpty()) {
+                    XLog.w("[$id] метод $name не найден")
+                } else {
+                    XLog.i("[$id] $name перехвачен")
+                }
+            }
         }
 
-        SERIES_CHECKS.forEach { name ->
-            val hooks = clazz.hookAllBefore(name) { param ->
-                if (calledFromWatermark()) param.result = false
+        val targets = buildList {
+            if (clazz != null) add(clazz)
+            addAll(CameraFeatureConfigHook.classCandidates(CameraFeatureConfigHook.Source.CONFIG).mapNotNull { findClassOrNull(it) })
+            addAll(CameraFeatureConfigHook.classCandidates(CameraFeatureConfigHook.Source.MANAGER).mapNotNull { findClassOrNull(it) })
+        }.distinct()
+
+        var hookedCount = 0
+        targets.forEach { target ->
+            val hooks = target.hookAllBefore("isCameraSignedByZeiss") { param ->
+                param.result = true
             }
-            if (hooks.isEmpty()) {
-                XLog.w("[$id] метод $name не найден")
-            } else {
-                XLog.i("[$id] $name перехвачен")
+            if (hooks.isNotEmpty()) {
+                hookedCount += hooks.size
+                XLog.i("[$id] ${target.name}.isCameraSignedByZeiss -> true (перехвачено: ${hooks.size})")
             }
+        }
+        if (hookedCount == 0) {
+            XLog.d("[$id] метод isCameraSignedByZeiss не найден в проверяемых классах камеры")
         }
     }
 

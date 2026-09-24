@@ -79,6 +79,14 @@ fun AppHooksScreen(
             app.hooks.forEach { put(it.id, settings.isEnabled(it)) }
         }
     }
+
+    LaunchedEffect(app.packageName) {
+        app.hooks.forEach { hook ->
+            if (settings.isEnabled(hook)) {
+                RequiredFeatures.apply(settings, hook, true)
+            }
+        }
+    }
     // Останавливать можно только реальное приложение: у системного фреймворка
     // и универсального «*» force stop смысла не имеет.
     val canForceStop = app.installed &&

@@ -47,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +66,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.hooks.player.VivoIslandAppsHook
@@ -81,7 +85,16 @@ private data class AppEntry(
     val isDefaultSupported: Boolean
 )
 
-private const val GET_INSTALLED_APPS_PERMISSION = "android.permission.GET_INSTALLED_APPS"
+private val INSTALLED_APPS_PERMISSIONS = arrayOf(
+    "com.android.permission.GET_INSTALLED_APPS",
+    "android.permission.GET_INSTALLED_APPS",
+    "com.vivo.permission.GET_INSTALLED_APPS"
+)
+
+private fun hasInstalledAppsPermission(context: Context): Boolean =
+    INSTALLED_APPS_PERMISSIONS.any { perm ->
+        ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+    }
 
 /**
  * Экран выбора приложений для показа в динамическом острове OriginOS (Origin Player).
@@ -97,18 +110,29 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
     var reloadTrigger by remember { mutableStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        if (results.values.any { it }) {
             reloadTrigger++
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= 34) {
-            if (ContextCompat.checkSelfPermission(context, GET_INSTALLED_APPS_PERMISSION) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(GET_INSTALLED_APPS_PERMISSION)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                reloadTrigger++
             }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasInstalledAppsPermission(context)) {
+            permissionLauncher.launch(INSTALLED_APPS_PERMISSIONS)
         }
     }
 
@@ -278,11 +302,11 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (installedApps.isEmpty() && Build.VERSION.SDK_INT >= 34) {
+                        if (installedApps.isEmpty()) {
                             Spacer(Modifier.height(12.dp))
                             Button(
                                 onClick = {
-                                    permissionLauncher.launch(GET_INSTALLED_APPS_PERMISSION)
+                                    permissionLauncher.launch(INSTALLED_APPS_PERMISSIONS)
                                 },
                                 shape = RoundedCornerShape(18.dp)
                             ) {
@@ -406,11 +430,27 @@ fun OriginPlayerIslandAppsScreen(onBack: () -> Unit) {
 private fun loadInstalledApps(context: Context): List<AppEntry> {
     val pm = context.packageManager
     return try {
-        val installed = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        installed
+        val appList: List<ApplicationInfo> = try {
+            val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            if (apps.isNotEmpty()) apps else {
+                pm.getInstalledPackages(0).mapNotNull { it.applicationInfo }
+            }
+        } catch (_: Throwable) {
+            try {
+                pm.getInstalledPackages(0).mapNotNull { it.applicationInfo }
+            } catch (_: Throwable) {
+                emptyList()
+            }
+        }
+
+        appList
             .filter { it.packageName != context.packageName }
             .map { appInfo ->
-                val label = pm.getApplicationLabel(appInfo).toString()
+                val label = try {
+                    pm.getApplicationLabel(appInfo).toString()
+                } catch (_: Throwable) {
+                    appInfo.packageName
+                }
                 val icon = try {
                     pm.getApplicationIcon(appInfo).toBitmap(128, 128).asImageBitmap()
                 } catch (_: Throwable) {

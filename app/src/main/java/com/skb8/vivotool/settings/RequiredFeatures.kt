@@ -21,11 +21,21 @@ object RequiredFeatures {
     fun apply(settings: AppSettings, hook: BaseHook, enabled: Boolean) {
         val features = byHook[hook.id] ?: return
         features.forEach { (feature, value) ->
-            val key = CameraFeatureConfigHook.settingsKey(
+            val configKey = CameraFeatureConfigHook.settingsKey(
                 CameraFeatureConfigHook.Source.CONFIG,
                 feature
             )
-            if (enabled) settings.setBoolean(key, value) else settings.remove(key)
+            val managerKey = CameraFeatureConfigHook.settingsKey(
+                CameraFeatureConfigHook.Source.MANAGER,
+                feature
+            )
+            if (enabled) {
+                settings.setBoolean(configKey, value)
+                settings.setBoolean(managerKey, value)
+            } else {
+                settings.remove(configKey)
+                settings.remove(managerKey)
+            }
         }
     }
 }
