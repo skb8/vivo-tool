@@ -110,14 +110,8 @@
     <string name="force_stop_failed">Не удалось закрыть — открываю информацию о приложении</string>
 
     <!-- Origin Player Island Apps -->
-    <string name="hook_player_island_apps_title">Приложения в Острове</string>
-    <string name="hook_player_island_apps_description">Позволяет добавить любые установленные плееры в Остров OriginOS</string>
-    <string name="island_apps_default_count">По умолчанию поддерживается: %1$d приложений</string>
-    <string name="island_apps_search_hint">Поиск по названию или пакету…</string>
-    <string name="island_apps_selected_count">Выбрано дополнительно: %1$d</string>
-    <string name="island_apps_built_in_badge">Встроено</string>
-    <string name="island_apps_grant_permission">Предоставить доступ</string>
-    <string name="island_apps_empty">Приложения не найдены</string>
+    <string name="hook_player_island_apps_title">Все плееры в Острове</string>
+    <string name="hook_player_island_apps_description">Включает поддержку Острова OriginOS для любых сторонних музыкальных плееров и стримингов</string>
 
     <!-- Vivo Share -->
     <string name="package_vivo_share">Vivo Share</string>

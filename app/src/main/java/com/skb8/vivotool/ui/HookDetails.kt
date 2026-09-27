@@ -14,8 +14,7 @@ object HookDetails {
 
     private val withDetails = setOf(
         AboutPhoneRomImageHook.ID,
-        CameraFeatureConfigHook.ID,
-        VivoIslandAppsHook.ID
+        CameraFeatureConfigHook.ID
     )
 
     fun hasDetails(hookId: String): Boolean = hookId in withDetails

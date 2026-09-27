@@ -4,16 +4,17 @@ import android.content.Context
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
-import com.skb8.vivotool.core.HookPrefs
 import com.skb8.vivotool.core.XLog
 import com.skb8.vivotool.core.getField
 import com.skb8.vivotool.core.getStaticField
+import com.skb8.vivotool.core.setField
+import com.skb8.vivotool.core.setStaticField
 
 /**
  * Хук для плеера Origin (com.vivo.musicwidgetmix):
- * расширяет белый список приложений, для которых разрешён показ
- * в динамическом острове OriginOS (Dynamic Island / SuperX-уведомление),
- * а также перехват аудиопотоков.
+ * снимает ограничение белого списка приложений для динамического острова OriginOS.
+ * Любое установленное приложение, воспроизводящее звук через MediaSession/AudioTrack,
+ * автоматически отображается в Острове с обложкой, названием трека и кнопками управления.
  */
 object VivoIslandAppsHook : BaseHook() {
 
@@ -25,48 +26,35 @@ object VivoIslandAppsHook : BaseHook() {
     override val descriptionRes = R.string.hook_player_island_apps_description
     override val enabledByDefault = false
 
-    /**
-     * 33 пакета плееров и аудиосервисов, захардкоженные по умолчанию
-     * в прошивке Vivo (t3.v.g).
-     */
-    val DEFAULT_ISLAND_PACKAGES = setOf(
-        "com.android.bbkmusic.local",
-        "com.android.bbkmusic",
-        "com.tencent.qqmusic",
-        "com.kugou.android",
-        "com.netease.cloudmusic",
-        "cn.kuwo.player",
-        "cmccwm.mobilemusic",
-        "com.tencent.qqmusiclite",
-        "com.kugou.android.elder",
-        "com.kugou.android.lite",
-        "com.tencent.blackkey",
-        "com.luna.music",
-        "cn.wenyu.bodian",
-        "com.kugou.viper",
-        "com.ting.mp3.android",
-        "com.hiby.music",
-        "com.spotify.music",
-        "com.apple.android.music",
-        "com.xs.fm.lite",
-        "com.xs.fm",
-        "com.ximalaya.ting.android",
-        "com.dragon.read",
-        "bubei.tingshu",
-        "com.kmxs.reader",
-        "fm.qingting.qtradio",
-        "app.podcast.cosmos",
-        "com.baidu.netdisk",
-        "com.ximalaya.ting.lite",
-        "cn.missevan",
-        "com.yibasan.lizhifm",
-        "com.shinyv.cnr",
-        "com.audio.tingting",
-        "com.tencent.qqmusicpad"
+    private val IGNORED_PACKAGES = setOf(
+        "android",
+        "com.android.systemui",
+        "com.vivo.musicwidgetmix",
+        "com.vivo.upslide",
+        "com.android.server.telecom",
+        "com.android.phone",
+        "com.vivo.incallui",
+        "com.android.incallui",
+        "com.google.android.dialer"
     )
 
+    private fun isIgnored(pkg: String): Boolean {
+        return pkg in IGNORED_PACKAGES || pkg.startsWith("com.android.internal")
+    }
+
+    /**
+     * Список-обёртка, чей метод contains() возвращает true для любых медиа-пакетов,
+     * снимая проверку белого списка в IslandNotificationManager и WhitelistManager.
+     */
+    class PermissiveStringList(initial: Collection<String> = emptyList()) : ArrayList<String>(initial) {
+        override fun contains(element: String): Boolean {
+            if (element.isEmpty() || isIgnored(element)) return false
+            return true
+        }
+    }
+
     override fun onHook() {
-        XLog.i("Применяем хук добавления сторонних приложений в Origin Island")
+        XLog.i("[$id] Включаем универсальную поддержку всех плееров в Origin Island")
 
         hookWhitelistManager()
         hookAppUtils()
@@ -81,101 +69,62 @@ object VivoIslandAppsHook : BaseHook() {
         try {
             // g() заполняет f15026d (белый список для Острова)
             clazz.hookAfter("g") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val list = param.thisObject?.getField("f15026d") as? MutableList<String>
-                        list?.let {
-                            for (pkg in customApps) {
-                                if (!it.contains(pkg)) it.add(pkg)
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        XLog.e("Ошибка добавления в f15026d", t)
-                    }
+                val thisObj = param.thisObject ?: return@hookAfter
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val list = thisObj.getField("f15026d") as? List<String> ?: emptyList()
+                    thisObj.setField("f15026d", PermissiveStringList(list))
+                } catch (t: Throwable) {
+                    XLog.e("[$id] Ошибка подмены f15026d", t)
                 }
             }
 
             // h() заполняет f15023a (общий список перехвата аудиопотоков)
             clazz.hookAfter("h") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val list = param.thisObject?.getField("f15023a") as? MutableList<String>
-                        list?.let {
-                            for (pkg in customApps) {
-                                if (!it.contains(pkg)) it.add(pkg)
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        XLog.e("Ошибка добавления в f15023a", t)
-                    }
+                val thisObj = param.thisObject ?: return@hookAfter
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val list = thisObj.getField("f15023a") as? List<String> ?: emptyList()
+                    thisObj.setField("f15023a", PermissiveStringList(list))
+                } catch (t: Throwable) {
+                    XLog.e("[$id] Ошибка подмены f15023a", t)
                 }
             }
 
             // f() заполняет f15024b (виджеты / шторка)
             clazz.hookAfter("f") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val list = param.thisObject?.getField("f15024b") as? MutableList<String>
-                        list?.let {
-                            for (pkg in customApps) {
-                                if (!it.contains(pkg)) it.add(pkg)
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        XLog.e("Ошибка добавления в f15024b", t)
-                    }
+                val thisObj = param.thisObject ?: return@hookAfter
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val list = thisObj.getField("f15024b") as? List<String> ?: emptyList()
+                    thisObj.setField("f15024b", PermissiveStringList(list))
+                } catch (t: Throwable) {
+                    XLog.e("[$id] Ошибка подмены f15024b", t)
                 }
             }
 
             // Геттер c(): возвращает белый список острова
             clazz.hookAfter("c") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
-                    if (list != null) {
-                        for (pkg in customApps) {
-                            if (!list.contains(pkg)) list.add(pkg)
-                        }
-                        param.result = list
-                    }
-                }
+                @Suppress("UNCHECKED_CAST")
+                val list = param.result as? List<String> ?: emptyList()
+                param.result = PermissiveStringList(list)
             }
 
             // Геттер d(): возвращает общий список перехвата аудиопотоков
             clazz.hookAfter("d") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
-                    if (list != null) {
-                        for (pkg in customApps) {
-                            if (!list.contains(pkg)) list.add(pkg)
-                        }
-                        param.result = list
-                    }
-                }
+                @Suppress("UNCHECKED_CAST")
+                val list = param.result as? List<String> ?: emptyList()
+                param.result = PermissiveStringList(list)
             }
 
             // Геттер b(): возвращает список виджетов
             clazz.hookAfter("b") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    val list = (param.result as? List<*>)?.filterIsInstance<String>()?.toMutableList()
-                    if (list != null) {
-                        for (pkg in customApps) {
-                            if (!list.contains(pkg)) list.add(pkg)
-                        }
-                        param.result = list
-                    }
-                }
+                @Suppress("UNCHECKED_CAST")
+                val list = param.result as? List<String> ?: emptyList()
+                param.result = PermissiveStringList(list)
             }
         } catch (t: Throwable) {
-            XLog.e("Не удалось захукать t3.v (WhitelistManager)", t)
+            XLog.e("[$id] Не удалось захукать t3.v (WhitelistManager)", t)
         }
     }
 
@@ -185,11 +134,10 @@ object VivoIslandAppsHook : BaseHook() {
             return
         }
         try {
-            // d.P(Context, String): проверка перехвата аудиопотока в MainApplication
+            // d.P(Context, String): проверка перехвата аудиопотока в MainApplication и ResidentManager
             clazz.hookAfter("P", Context::class.java, String::class.java) { param ->
                 val pkg = param.args[1] as? String ?: return@hookAfter
-                val customApps = HookPrefs.getIslandApps()
-                if (pkg in customApps) {
+                if (pkg.isNotEmpty() && !isIgnored(pkg)) {
                     param.result = true
                 }
             }
@@ -197,22 +145,19 @@ object VivoIslandAppsHook : BaseHook() {
             // d.Q(Context, String): resident_music_app_white_list
             clazz.hookAfter("Q", Context::class.java, String::class.java) { param ->
                 val pkg = param.args[1] as? String ?: return@hookAfter
-                val customApps = HookPrefs.getIslandApps()
-                if (pkg in customApps) {
+                if (pkg.isNotEmpty() && !isIgnored(pkg)) {
                     param.result = true
                 }
             }
 
-            // d.M(Context, String): cooperation music check
-            clazz.hookAfter("M", Context::class.java, String::class.java) { param ->
-                val pkg = param.args[1] as? String ?: return@hookAfter
-                val customApps = HookPrefs.getIslandApps()
-                if (pkg in customApps) {
-                    param.result = true
-                }
+            // d.A(Context): белый список плееров на экране блокировки
+            clazz.hookAfter("A", Context::class.java) { param ->
+                @Suppress("UNCHECKED_CAST")
+                val list = param.result as? List<String> ?: emptyList()
+                param.result = PermissiveStringList(list)
             }
         } catch (t: Throwable) {
-            XLog.e("Не удалось захукать AppUtils", t)
+            XLog.e("[$id] Не удалось захукать AppUtils", t)
         }
     }
 
@@ -223,32 +168,21 @@ object VivoIslandAppsHook : BaseHook() {
         }
         try {
             clazz.hookAfter("onCreate") { param ->
-                val customApps = HookPrefs.getIslandApps()
-                if (customApps.isNotEmpty()) {
-                    val appClass = param.thisObject?.javaClass ?: return@hookAfter
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val f8509g0 = appClass.getStaticField("f8509g0") as? MutableList<String>
-                        f8509g0?.let {
-                            for (pkg in customApps) {
-                                if (!it.contains(pkg)) it.add(pkg)
-                            }
-                        }
-                    } catch (_: Throwable) {}
+                val appClass = param.thisObject?.javaClass ?: return@hookAfter
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val f8509g0 = appClass.getStaticField("f8509g0") as? List<String> ?: emptyList()
+                    appClass.setStaticField("f8509g0", PermissiveStringList(f8509g0))
+                } catch (_: Throwable) {}
 
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val f8510h0 = appClass.getStaticField("f8510h0") as? MutableList<String>
-                        f8510h0?.let {
-                            for (pkg in customApps) {
-                                if (!it.contains(pkg)) it.add(pkg)
-                            }
-                        }
-                    } catch (_: Throwable) {}
-                }
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val f8510h0 = appClass.getStaticField("f8510h0") as? List<String> ?: emptyList()
+                    appClass.setStaticField("f8510h0", PermissiveStringList(f8510h0))
+                } catch (_: Throwable) {}
             }
         } catch (t: Throwable) {
-            XLog.e("Не удалось захукать MainApplication", t)
+            XLog.e("[$id] Не удалось захукать MainApplication", t)
         }
     }
 }
