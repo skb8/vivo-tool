@@ -76,7 +76,7 @@ abstract class BaseHook {
     protected abstract fun onHook()
 
     /** Подходит ли хук текущей версии Android. */
-    fun isSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt in minSdk..maxSdk
+    open fun isSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt in minSdk..maxSdk
 
     /** Применим ли хук к указанному пакету. */
     fun matches(packageName: String): Boolean =
