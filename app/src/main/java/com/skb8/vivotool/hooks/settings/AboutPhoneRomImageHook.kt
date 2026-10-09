@@ -27,8 +27,16 @@ object AboutPhoneRomImageHook : BaseHook() {
 
     const val ID = "settings_about_phone_rom_image"
 
-    /** Имя ресурса в APK настроек. */
-    const val RESOURCE_NAME = "about_phone_origin_os_rom15"
+    /** Базовый префикс имени ресурса в APK настроек. */
+    private const val RESOURCE_PREFIX = "about_phone_origin_os_rom"
+
+    /** Имя ресурса в APK настроек в зависимости от версии Android (16 -> rom16, иначе -> rom15). */
+    val RESOURCE_NAME: String
+        get() {
+            val version = com.skb8.vivotool.core.SystemProperties.releaseVersionMajor
+            val romVersion = if (version >= 16) 16 else 15
+            return "${RESOURCE_PREFIX}$romVersion"
+        }
 
     /** Размер оригинального ресурса — под него обрезается выбранная картинка. */
     const val TARGET_WIDTH = 936

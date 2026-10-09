@@ -59,6 +59,11 @@ object VivoNewVolumeUiHook : BaseHook() {
 
     override val enabledByDefault: Boolean = false
 
+    override fun isSupported(sdkInt: Int): Boolean {
+        if (!super.isSupported(sdkInt)) return false
+        return com.skb8.vivotool.core.SystemProperties.releaseVersionMajor <= 15
+    }
+
     private val hookedLoaders = Collections.synchronizedSet(
         Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>())
     )

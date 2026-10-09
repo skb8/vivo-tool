@@ -26,15 +26,26 @@ import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
  */
 object HookModules {
 
-    val all: List<BaseHook> = listOf(
-        AboutPhoneRomImageHook,
-        CameraFeatureConfigHook,
-        CameraZeissHook,
-        CameraHorizonEisHook,
-        VivoNewVolumeUiHook,
-        VivoMultiFreeformHook,
-        VivoIslandAppsHook,
-        VivoShareNoTimeoutHook,
-    )
+    val all: List<BaseHook>
+        get() {
+            val list = mutableListOf(
+                AboutPhoneRomImageHook,
+                CameraFeatureConfigHook,
+                CameraZeissHook,
+                CameraHorizonEisHook,
+            )
+            // В Android 16+ (OriginOS 6+) новый стиль громкости уже штатный по умолчанию
+            if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor <= 15) {
+                list.add(VivoNewVolumeUiHook)
+            }
+            list.addAll(
+                listOf(
+                    VivoMultiFreeformHook,
+                    VivoIslandAppsHook,
+                    VivoShareNoTimeoutHook,
+                )
+            )
+            return list
+        }
 }
 
