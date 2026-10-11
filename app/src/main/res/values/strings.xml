@@ -57,7 +57,7 @@
     <string name="hook_camera_features_title">Available features</string>
     <string name="hook_camera_features_description">Force-enables or disables features from the firmware FeatureConfig</string>
     <string name="hook_camera_horizon_eis_title">Horizon stabilization</string>
-    <string name="hook_camera_horizon_eis_description">Standard stabilization in video runs the horizon-levelling mode on the main camera. Experimental: the firmware does not offer this mode</string>
+    <string name="hook_camera_horizon_eis_description">Android 16+: a separate native Horizon mode in the video stabilization menu. Android 15 and earlier: Standard enables horizon levelling on the main camera. Experimental: requires firmware algorithm support</string>
     <string name="hook_camera_zeiss_title">Zeiss features</string>
     <string name="hook_camera_zeiss_description">The logo in the frame watermark, the T* colour button and the portrait formulas. The tweak sets the feature flags itself</string>
     <string name="hook_systemui_new_volume_ui_title">New volume panel</string>

@@ -2,10 +2,19 @@ package com.skb8.vivotool.hooks.camera
 
 import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
+import com.skb8.vivotool.core.SystemProperties
 import com.skb8.vivotool.core.XLog
 
 /**
  * Стабилизация с выравниванием горизонта в видео.
+ *
+ * Android 16+: включает штатную конфигурацию `recordStableVersion() == 4`.
+ * `SettingSupportManagerHelper.getStableRes()` загружает отдельный пункт
+ * «Горизонт» с родными подписями и иконками. Камера сама сохраняет значение
+ * «3», применяет mutex и показывает переключатель направления съёмки.
+ * Прочитанные значения настроек в этой ветке не подменяются.
+ *
+ * Android 15 и ниже: прежняя подмена «стандартной» стабилизации, описанная ниже.
  *
  * Режим в приложении есть: стабилизация хранится в `pref_video_super_stable`
  * значениями «выкл» (0), «ультра» (1), «стандартная» (2) и «горизонт» (3).
@@ -68,6 +77,43 @@ object CameraHorizonEisHook : BaseHook() {
     private var reported = false
 
     override fun onHook() {
+        if (SystemProperties.releaseVersionMajor >= 16) {
+            enableNativeHorizonMode()
+        } else {
+            hookLegacyHorizonMode()
+        }
+    }
+
+    /** Штатное меню: «Выкл», «Ультра», «Стандартная» и отдельный «Горизонт». */
+    private fun enableNativeHorizonMode() {
+        // instance может быть фасадом, делегирующим вызов конфигу модели.
+        // Перехватываем также реализации в иерархии модели и общего конфига.
+        val activeConfig = findClassOrNull("com.android.camera.featureconfig.FeatureConfig")
+            ?.let { clazz ->
+                runCatching { clazz.getField("instance").get(null)?.javaClass }
+                    .onFailure { XLog.e("[$id] не удалось получить активный конфиг камеры", it) }
+                    .getOrNull()
+            }
+        val targets = buildList {
+            activeConfig?.let { add(it) }
+            CameraFeatureConfigHook.classCandidates(CameraFeatureConfigHook.Source.CONFIG)
+                .mapNotNullTo(this) { findClassOrNull(it) }
+            findClassOrNull("com.android.camera.featureconfig.FeatureConfig_common")
+                ?.let { add(it) }
+        }.distinct()
+        val methods = targets.flatMap {
+            it.methodsInHierarchy("recordStableVersion", Int::class.javaPrimitiveType)
+        }.filter { it.parameterCount == 0 }.distinct()
+
+        val hooked = methods.count { it.replaceWithConstant(4) != null }
+        if (hooked == 0) {
+            XLog.w("[$id] recordStableVersion не перехвачен, штатный режим горизонта не включён")
+        } else {
+            XLog.i("[$id] штатный пункт «Горизонт» включён: recordStableVersion -> 4 ($hooked)")
+        }
+    }
+
+    private fun hookLegacyHorizonMode() {
         silenceHelpTips()
 
         val clazz = findClassOrNull(SETTING_MANAGER_CLASS)
