@@ -118,12 +118,10 @@
     <string name="hook_vivo_share_no_timeout_title">Отключение автовыключения через 10 минут</string>
     <string name="hook_vivo_share_no_timeout_description">Предотвращает автоматическое выключение Vivo Share через 10 минут работы</string>
     <!-- Кастомизация «О устройстве», Android 16+ -->
-    <string name="hook_about_gradient_title">Динамический градиент «О устройстве»</string>
-    <string name="hook_about_gradient_description">Подбирает фон под цвета показанного фото вместо зашитого фона. Android 16+</string>
     <string name="hook_about_customization_title">Редактор «О устройстве»</string>
     <string name="hook_about_customization_description">Название под логотипом, подписи и значения пунктов, скрытие и добавление собственных строк. Android 16+</string>
-    <string name="hook_about_dividers_title">Скрыть разделители «О устройстве»</string>
-    <string name="hook_about_dividers_description">Убирает линии между группами и внутри пунктов этого экрана. Android 16+</string>
+    <string name="hook_settings_dividers_title">Скрыть разделители в настройках</string>
+    <string name="hook_settings_dividers_description">Убирает линии между пунктами списков во всём приложении «Настройки». Android 16+</string>
     <string name="about_customization_hint">Включите хук «Редактор „О устройстве“» в списке твиков. Изменения меняют только этот экран. После сохранения закройте «Настройки» через force stop и откройте экран заново.</string>
     <string name="about_customization_saved">Сохранено. Перезапустите «Настройки», чтобы применить</string>
     <string name="about_model_label">Название устройства под логотипом</string>

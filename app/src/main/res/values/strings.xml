@@ -117,12 +117,10 @@
     <string name="hook_vivo_share_no_timeout_title">Disable 10-minute auto turn off</string>
     <string name="hook_vivo_share_no_timeout_description">Prevents Vivo Share from automatically turning off after 10 minutes of inactivity</string>
     <!-- About device customization, Android 16+ -->
-    <string name="hook_about_gradient_title">Dynamic About device gradient</string>
-    <string name="hook_about_gradient_description">Matches the background to the displayed photo instead of using the fixed background. Android 16+</string>
     <string name="hook_about_customization_title">About device editor</string>
     <string name="hook_about_customization_description">Device name below the logo, row labels and values, hidden rows and custom entries. Android 16+</string>
-    <string name="hook_about_dividers_title">Hide About device dividers</string>
-    <string name="hook_about_dividers_description">Removes lines between groups and within rows on this screen. Android 16+</string>
+    <string name="hook_settings_dividers_title">Hide dividers in Settings</string>
+    <string name="hook_settings_dividers_description">Removes lines between list entries throughout the Settings app. Android 16+</string>
     <string name="about_customization_hint">Enable the About device editor hook in the tweak list. Changes affect this screen only. After saving, force stop Settings and reopen the screen.</string>
     <string name="about_customization_saved">Saved. Restart Settings to apply</string>
     <string name="about_model_label">Device name below the logo</string>
