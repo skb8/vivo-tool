@@ -7,6 +7,9 @@ import com.skb8.vivotool.hooks.camera.CameraZeissHook
 import com.skb8.vivotool.hooks.framework.VivoMultiFreeformHook
 import com.skb8.vivotool.hooks.player.VivoIslandAppsHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneDividersHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneGradientHook
 import com.skb8.vivotool.hooks.share.VivoShareNoTimeoutHook
 import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
 
@@ -34,6 +37,9 @@ object HookModules {
                 CameraZeissHook,
                 CameraHorizonEisHook,
             )
+            if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor >= 16) {
+                list.addAll(listOf(AboutPhoneGradientHook, AboutPhoneCustomizationHook, AboutPhoneDividersHook))
+            }
             // В Android 16+ (OriginOS 6+) новый стиль громкости уже штатный по умолчанию
             if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor <= 15) {
                 list.add(VivoNewVolumeUiHook)

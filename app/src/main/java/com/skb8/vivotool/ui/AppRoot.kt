@@ -18,8 +18,10 @@ import com.skb8.vivotool.R
 import com.skb8.vivotool.core.ImageKeys
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
 import com.skb8.vivotool.settings.ImageStore
 import com.skb8.vivotool.ui.detail.AboutPhoneImageScreen
+import com.skb8.vivotool.ui.detail.AboutPhoneCustomizationScreen
 import com.skb8.vivotool.ui.detail.CameraFeaturesScreen
 
 /** Экраны приложения. */
@@ -78,6 +80,8 @@ fun AppRoot() {
             )
 
             CameraFeatureConfigHook.ID -> CameraFeaturesScreen(onBack = ::pop)
+
+            AboutPhoneCustomizationHook.ID -> AboutPhoneCustomizationScreen(onBack = ::pop)
 
             else -> LaunchedEffect(route.hookId) { pop() }
         }

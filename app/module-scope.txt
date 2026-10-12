@@ -10,7 +10,7 @@
 # иначе LSPosed не предложит это приложение в списке выбора.
 #
 com.android.camera               # доступные фичи камеры
-com.android.settings             # картинка карточки «О телефоне»
+com.android.settings             # картинка и кастомизация экрана «О устройстве»
 com.android.systemui             # SystemUI / шторка, статусбар, громкость
 com.vivo.systemuiplugin          # плагин интерфейса системы Vivo (громкость OriginOS 5)
 android                          # системный фреймворк (плавающие окна)

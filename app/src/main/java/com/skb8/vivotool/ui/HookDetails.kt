@@ -3,6 +3,7 @@ package com.skb8.vivotool.ui
 import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.player.VivoIslandAppsHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
+import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
 
 /**
  * Твики, у которых есть свой экран настроек.
@@ -14,6 +15,7 @@ object HookDetails {
 
     private val withDetails = setOf(
         AboutPhoneRomImageHook.ID,
+        AboutPhoneCustomizationHook.ID,
         CameraFeatureConfigHook.ID
     )
 
