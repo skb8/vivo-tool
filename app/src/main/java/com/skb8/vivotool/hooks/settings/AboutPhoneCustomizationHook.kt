@@ -41,7 +41,7 @@ object AboutPhoneCustomizationHook : BaseHook() {
     override fun onHook() {
         val base = findClassOrNull(AboutPhoneViews.BASE_CONTROLLER)
         if (base == null) {
-            XLog.w("[$id] контроллеры «О устройстве» не найдены")
+            XLog.w("[$id] контроллеры «О телефоне» не найдены")
             return
         }
         // Базовый initRootView вызывается после создания и заполнения родного виджета.

@@ -97,10 +97,11 @@ class AppSettings(private val context: Context) {
 
     fun getString(key: String, default: String = ""): String = prefs.getString(key, default) ?: default
 
-    fun setString(key: String, value: String) {
-        prefs.edit().putString(key, value).commit()
+    fun setString(key: String, value: String): Boolean {
+        if (!prefs.edit().putString(key, value).commit()) return false
         ServiceBridge.remotePrefs?.edit()?.putString(key, value)?.apply()
         WorldReadable.fix(context, Constants.PREFS_NAME)
+        return true
     }
 
     fun setInt(key: String, value: Int) {

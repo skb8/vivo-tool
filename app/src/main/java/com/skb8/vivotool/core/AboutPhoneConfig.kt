@@ -101,7 +101,7 @@ data class AboutPhoneConfig(
                 }.distinctBy { it.key }
                 AboutPhoneConfig(json.optionalText("modelName"), json.optBoolean("hideModel"), rows)
             }.getOrElse {
-                XLog.e("Не удалось прочитать настройки «О устройстве»", it)
+                XLog.e("Не удалось прочитать настройки «О телефоне»", it)
                 AboutPhoneConfig()
             }
         }
