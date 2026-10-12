@@ -224,7 +224,7 @@ private fun AboutPhoneRowDialog(row: AboutPhoneRow, onDismiss: () -> Unit, onSav
         },
         confirmButton = { TextButton(onClick = { onSave(row.copy(title = if (overrideTitle) title else null,
             value = if (overrideValue) value else null, visibility = visibility)) },
-            enabled = (!custom && !overrideTitle) || title.isNotBlank()) { Text(stringResource(R.string.action_apply)) } },
+            enabled = !custom || title.isNotBlank()) { Text(stringResource(R.string.action_apply)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }

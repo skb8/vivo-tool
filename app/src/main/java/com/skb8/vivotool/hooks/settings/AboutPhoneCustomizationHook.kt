@@ -202,6 +202,7 @@ object AboutPhoneCustomizationHook : BaseHook() {
             "version" -> "version_info_title"
             "status" -> "status_info_title"
             "legal" -> "legal_info_title"
+            "advisor" -> "user_advisor_plan_title"
             else -> return ""
         }
         val id = root.resources.getIdentifier(resourceName, "string", AboutPhoneViews.PACKAGE)
