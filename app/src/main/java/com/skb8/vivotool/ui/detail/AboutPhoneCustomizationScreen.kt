@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -146,7 +148,7 @@ fun AboutPhoneCustomizationScreen(onBack: () -> Unit) {
         topBar = { EditorTopBar(stringResource(R.string.hook_about_customization_title), onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            Surface(tonalElevation = 2.dp) {
+            Surface(modifier = Modifier.navigationBarsPadding(), tonalElevation = 2.dp) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
                     Text(stringResource(R.string.about_restart_hint), style = MaterialTheme.typography.bodySmall)
                     TextButton(onClick = {
@@ -298,7 +300,7 @@ private fun AboutPhoneRowEditor(row: AboutPhoneRow, fieldLabel: String?, isNew: 
 
     Scaffold(topBar = { EditorTopBar(if (isNew) stringResource(R.string.about_add_row) else
         fieldLabel ?: row.title.orEmpty(), ::leave) }, bottomBar = {
-        Surface(tonalElevation = 2.dp) {
+        Surface(modifier = Modifier.navigationBarsPadding().imePadding(), tonalElevation = 2.dp) {
             Button(onClick = {
                 if (custom && title.isBlank()) showTitleError = true else onSave(draft)
             }, Modifier.fillMaxWidth().padding(16.dp)) { Text(stringResource(if (isNew) R.string.about_add_row else R.string.about_save)) }
@@ -348,7 +350,7 @@ private fun AboutPhoneModelEditor(config: AboutPhoneConfig, onBack: () -> Unit, 
     fun leave() { if (changed) discard = true else onBack() }
     BackHandler { leave() }
     Scaffold(topBar = { EditorTopBar(stringResource(R.string.about_model_label), ::leave) }, bottomBar = {
-        Surface(tonalElevation = 2.dp) {
+        Surface(modifier = Modifier.navigationBarsPadding().imePadding(), tonalElevation = 2.dp) {
             Button(onClick = {
                 if (!original && shown && name.isBlank()) showNameError = true
                 else onSave(if (original) null else name, !shown)
