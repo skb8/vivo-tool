@@ -11,6 +11,7 @@ import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
 import com.skb8.vivotool.hooks.settings.SettingsListDividersHook
 import com.skb8.vivotool.hooks.share.VivoShareNoTimeoutHook
 import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
+import com.skb8.vivotool.hooks.updater.UpdaterInfoHook
 
 /**
  * Список подключённых хуков — единственное место, куда нужно добавить свой хук.
@@ -35,6 +36,7 @@ object HookModules {
                 CameraFeatureConfigHook,
                 CameraZeissHook,
                 CameraHorizonEisHook,
+                UpdaterInfoHook,
             )
             if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor >= 16) {
                 list.addAll(listOf(AboutPhoneCustomizationHook, SettingsListDividersHook))

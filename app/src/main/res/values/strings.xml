@@ -156,4 +156,6 @@
     <string name="about_field_status">Device status</string>
     <string name="about_field_legal">Legal information</string>
     <string name="about_field_advisor">Product improvement program</string>
+    <string name="hook_updater_info_title">Available update details</string>
+    <string name="hook_updater_info_description">Adds About this update to the three-dot menu: package data, firmware links, changelog and copy actions.</string>
 </resources>

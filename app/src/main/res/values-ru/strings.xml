@@ -157,4 +157,6 @@
     <string name="about_field_status">Состояние устройства</string>
     <string name="about_field_legal">Юридическая информация</string>
     <string name="about_field_advisor">Программа улучшения продукта</string>
+    <string name="hook_updater_info_title">Данные доступного обновления</string>
+    <string name="hook_updater_info_description">Добавляет «Об этом обновлении» в меню с тремя точками: данные пакета, ссылки на прошивку, список изменений и копирование.</string>
 </resources>
