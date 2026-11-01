@@ -52,8 +52,14 @@ internal object UpdaterInfoDialog {
                 val current = owner.get() ?: return@post
                 if (current.isFinishing || current.isDestroyed || !dialog.isShowing) return@post
                 result.onSuccess { details ->
-                    root.removeAllViews()
-                    render(current, root, details, words)
+                    runCatching {
+                        root.removeAllViews()
+                        render(current, root, details, words)
+                    }.onFailure {
+                        XLog.e("[${UpdaterInfoHook.ID}] не удалось показать данные пакета", it)
+                        root.removeAllViews()
+                        root.addView(TextView(current).apply { text = words.failed })
+                    }
                 }.onFailure {
                     XLog.e("[${UpdaterInfoHook.ID}] не удалось прочитать пакет", it)
                     status.text = words.failed

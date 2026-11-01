@@ -10,6 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Collections
 import java.util.WeakHashMap
+import java.io.File
 
 internal data class UpdatePackageDetails(
     val kind: String,
@@ -96,10 +97,11 @@ internal object UpdaterInfoReader {
         for (name in listOf("getLogUrl", "getLogZip", "getH5Link")) addUrls(value(name), logs)
 
         // WebHelper читает локальный data.js / prefs для данной версии, без HTTP-запроса.
-        val cachedLog = if (kind == "FOTA" && version.isNotBlank()) runCatching {
+        val cachedLog = if (version.isNotBlank()) runCatching {
             val helper = Class.forName("com.bbk.updater.utils.WebHelper", true, loader)
                 .callStaticMethod("getInstance", context) ?: return@runCatching ""
-            val log = helper.callMethod("getLogInfo", version) ?: return@runCatching ""
+            val log = if (kind == "FOTA") helper.callMethod("getLogInfo", version) else null
+            if (log == null) return@runCatching cachedDataJs(context, helper, kind, version, loader)
             buildList {
                 for (method in listOf("getLogHead", "getHeadContent")) {
                     (log.callMethod(method) as? String)?.takeIf { it.isNotBlank() }?.let(::add)
@@ -122,6 +124,50 @@ internal object UpdaterInfoReader {
     private fun plainText(text: String): String {
         if (!Regex("</?[a-zA-Z][^>]*>").containsMatchIn(text)) return text.trim()
         return Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString().trim()
+    }
+
+    private fun cachedDataJs(context: Context, helper: Any, kind: String, version: String, loader: ClassLoader): String {
+        val category = if (kind == "FOTA") "ota_pacakge" else "vgc_package"
+        val path = helper.callMethod("getDataJsFilePath", category, version) as? String ?: return ""
+        val file = File(path)
+        if (!file.isFile || file.length() > 2_000_000) return ""
+        val source = file.inputStream().buffered().use { input ->
+            val bytes = ByteArray(2_000_001)
+            var size = 0
+            while (size < bytes.size) {
+                val count = input.read(bytes, size, bytes.size - size)
+                if (count <= 0) break
+                size += count
+            }
+            if (size > 2_000_000) return ""
+            String(bytes, 0, size, Charsets.UTF_8)
+        }
+        // data.js содержит присваивание массива переводов; код JS не выполняется.
+        val start = source.indexOf('[')
+        val end = source.lastIndexOf(']')
+        if (start < 0 || end < start) return ""
+        val data = JSONArray(source.substring(start, end + 1))
+        val language = Class.forName("com.bbk.updater.utils.LanguageUtils", true, loader)
+            .callStaticMethod("matchLanguage", context) as? String ?: return ""
+        for (i in 0 until data.length()) {
+            val entry = data.optJSONObject(i) ?: continue
+            if (entry.optString("language") != language) continue
+            return buildList {
+                for (key in listOf("logHead", "headContent")) entry.optString(key).takeIf { it.isNotBlank() }?.let(::add)
+                val sections = mutableListOf<JSONObject>()
+                entry.optJSONObject("recommend")?.let(sections::add)
+                entry.optJSONArray("body")?.let { body ->
+                    for (j in 0 until body.length()) body.optJSONObject(j)?.let(sections::add)
+                }
+                for (section in sections) {
+                    section.optString("title").takeIf { it.isNotBlank() }?.let(::add)
+                    section.optJSONArray("content")?.let { content ->
+                        for (j in 0 until content.length()) content.optString(j).takeIf { it.isNotBlank() }?.let(::add)
+                    }
+                }
+            }.joinToString("\n\n")
+        }
+        return ""
     }
 
     private fun addUrls(text: String, urls: MutableSet<String>) {

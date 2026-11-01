@@ -84,7 +84,11 @@ object UpdaterInfoHook : BaseHook() {
             if (activity.isFinishing || activity.isDestroyed) return
             // Читаем именно presenter открытой Activity, без глобального кэша обновлений.
             val presenter = runCatching { activity.getField("mUpdatePresenter") }.getOrNull()
-            UpdaterInfoDialog.show(activity, presenter)
+            runCatching { UpdaterInfoDialog.show(activity, presenter) }.onFailure {
+                XLog.e("[$ID] не удалось открыть информацию об обновлении", it)
+                android.widget.Toast.makeText(activity, UpdaterInfoText(activity).failed,
+                    android.widget.Toast.LENGTH_LONG).show()
+            }
         }
     }
 }
