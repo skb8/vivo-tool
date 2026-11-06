@@ -18,6 +18,7 @@ system_server                    # процесс system_server (для Vector /
 com.vivo.musicwidgetmix          # Origin Player / виджет плеера (приложения в острове)
 com.vivo.share                   # Vivo Share (отключение автовыключения через 10 минут)
 com.bbk.updater                  # данные доступного обновления
+com.android.packageinstaller     # проверки в установщике пакетов
 com.skb8.vivotool                # сам модуль (для самопроверки статуса в Vector)
 
 # Другие частые цели (раскомментируйте, когда появятся хуки):

@@ -159,4 +159,8 @@
     <string name="about_field_advisor">Программа улучшения продукта</string>
     <string name="hook_updater_info_title">Данные доступного обновления</string>
     <string name="hook_updater_info_description">Добавляет «Об этом обновлении» в меню с тремя точками: данные пакета, ссылки на прошивку, список изменений и копирование.</string>
+    <string name="hook_installer_skip_security_title">Пропуск проверки безопасности</string>
+    <string name="hook_installer_skip_security_description">Сразу показывает «Риски не обнаружены» для всех приложений без сканирования и запроса к серверам Vivo. Скрывает блок «Защита от необнаруженных потенциальных угроз».</string>
+    <string name="hook_installer_local_checks_title">Пропуск локальных ограничений установки</string>
+    <string name="hook_installer_local_checks_description">Пропускает проверки совместимости Vivo с Android, OriginOS, регионом и типом устройства, предупреждение о 32-битном приложении и предложение открыть установленную версию. Патч действует только на стороне установщика пакетов: Android продолжает проверять подпись, понижение версии и целостность APK.</string>
 </resources>

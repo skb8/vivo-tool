@@ -5,6 +5,8 @@ import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.camera.CameraHorizonEisHook
 import com.skb8.vivotool.hooks.camera.CameraZeissHook
 import com.skb8.vivotool.hooks.framework.VivoMultiFreeformHook
+import com.skb8.vivotool.hooks.installer.InstallerLocalChecksHook
+import com.skb8.vivotool.hooks.installer.InstallerSkipSecurityHook
 import com.skb8.vivotool.hooks.player.VivoIslandAppsHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneRomImageHook
 import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
@@ -37,6 +39,8 @@ object HookModules {
                 CameraZeissHook,
                 CameraHorizonEisHook,
                 UpdaterInfoHook,
+                InstallerSkipSecurityHook,
+                InstallerLocalChecksHook,
             )
             if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor >= 16) {
                 list.addAll(listOf(AboutPhoneCustomizationHook, SettingsListDividersHook))

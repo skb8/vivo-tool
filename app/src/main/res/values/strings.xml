@@ -158,4 +158,8 @@
     <string name="about_field_advisor">Product improvement program</string>
     <string name="hook_updater_info_title">Available update details</string>
     <string name="hook_updater_info_description">Adds About this update to the three-dot menu: package data, firmware links, changelog and copy actions.</string>
+    <string name="hook_installer_skip_security_title">Skip security scan</string>
+    <string name="hook_installer_skip_security_description">Immediately shows No risks detected for every app without scanning or requesting Vivo servers. Hides the protection against undetected potential threats block.</string>
+    <string name="hook_installer_local_checks_title">Skip local installation restrictions</string>
+    <string name="hook_installer_local_checks_description">Skips Vivo compatibility checks for Android, OriginOS, region and device type, the 32-bit warning and the prompt to open an installed version. Only patches the package installer: Android still checks signatures, downgrades and APK integrity.</string>
 </resources>
