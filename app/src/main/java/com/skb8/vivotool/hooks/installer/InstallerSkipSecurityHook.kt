@@ -1,6 +1,7 @@
 package com.skb8.vivotool.hooks.installer
 
 import android.app.Application
+import android.content.Context
 import android.os.Handler
 import android.view.View
 import com.skb8.vivotool.R
@@ -31,6 +32,7 @@ object InstallerSkipSecurityHook : BaseHook() {
         val banner = findClass("com.android.packageinstaller.vivo.view.OpenSuperGuardGuideView")
         val caller = findClass(MODEL + "CallerInfo")
         val settings = findClass(MODEL + "SettingsInfo")
+        val localRisk = findClass("N0.e")
 
         // Validate the obfuscated animation fields before suppressing either scan.
         require(animator.getDeclaredField("b").type == Handler::class.java)
@@ -88,6 +90,11 @@ object InstallerSkipSecurityHook : BaseHook() {
                 param.result = null
             })
             hooks += requireNotNull(apk.returnConstant("isForbidInvalidVpnApk", false))
+            // The risk renderer also labels some 32-bit APKs as unsafe, independently of scans.
+            // Leave their installation compatibility dialog to the separate local-checks hook.
+            hooks += requireNotNull(localRisk.returnConstant(
+                "b", false, Context::class.java, caller, apk, responseClass, virusClass
+            ))
             hooks += requireNotNull(banner.hookBefore("l", Boolean::class.javaPrimitiveType) { param ->
                 (param.thisObject as View).visibility = View.GONE
                 param.result = null
