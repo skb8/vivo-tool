@@ -229,6 +229,7 @@ tasks.configureEach {
 dependencies {
     compileOnly(libs.libxposed.api)
     implementation(libs.libxposed.service)
+    implementation(libs.dexkit)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

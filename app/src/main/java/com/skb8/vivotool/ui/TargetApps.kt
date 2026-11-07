@@ -7,6 +7,7 @@ import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.HookRegistry
+import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 
@@ -40,6 +41,7 @@ object TargetApps {
     fun load(context: Context): List<TargetApp> {
         val byPackage = linkedMapOf<String, MutableList<BaseHook>>()
         HookRegistry.hooks.forEach { hook ->
+            if (hook.id == AboutPhoneCustomizationHook.ID) return@forEach
             hook.targetPackages.forEach { rawPackage ->
                 val packageName = packageAliases[rawPackage] ?: rawPackage
                 val list = byPackage.getOrPut(packageName) { mutableListOf() }
