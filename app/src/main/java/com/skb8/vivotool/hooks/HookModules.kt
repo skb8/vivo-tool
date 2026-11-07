@@ -5,6 +5,7 @@ import com.skb8.vivotool.hooks.camera.CameraFeatureConfigHook
 import com.skb8.vivotool.hooks.camera.CameraHorizonEisHook
 import com.skb8.vivotool.hooks.camera.CameraZeissHook
 import com.skb8.vivotool.hooks.framework.VivoMultiFreeformHook
+import com.skb8.vivotool.hooks.framework.VivoMultiFreeformAndroid16Hook
 import com.skb8.vivotool.hooks.installer.InstallerLocalChecksHook
 import com.skb8.vivotool.hooks.installer.InstallerSkipSecurityHook
 import com.skb8.vivotool.hooks.player.VivoIslandAppsHook
@@ -51,7 +52,11 @@ object HookModules {
             }
             list.addAll(
                 listOf(
-                    VivoMultiFreeformHook,
+                    if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor >= 16) {
+                        VivoMultiFreeformAndroid16Hook
+                    } else {
+                        VivoMultiFreeformHook
+                    },
                     VivoIslandAppsHook,
                     VivoShareNoTimeoutHook,
                 )

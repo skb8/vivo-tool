@@ -5,13 +5,14 @@ import com.skb8.vivotool.R
 import com.skb8.vivotool.core.BaseHook
 import com.skb8.vivotool.core.Constants
 import com.skb8.vivotool.core.HookPrefs
+import com.skb8.vivotool.core.SystemProperties
 import com.skb8.vivotool.core.XLog
 import com.skb8.vivotool.core.setField
 import java.util.Collections
 import java.util.WeakHashMap
 
 /**
- * Включение одновременного открытия плавающих окон (Freeform) от 2 до 10.
+ * Android 15 и ниже: одновременное открытие плавающих окон (Freeform) от 2 до 10.
  *
  * В OriginOS на обычных смартфонах установлено ограничение в максимум 1 активное
  * плавающее окно: при открытии второго окна предыдущее принудительно сворачивается в док
@@ -35,6 +36,9 @@ object VivoMultiFreeformHook : BaseHook() {
     override val targetPackages: Set<String> = setOf(Constants.SYSTEM_FRAMEWORK, "system_server")
 
     override val enabledByDefault: Boolean = true
+
+    override fun isSupported(sdkInt: Int): Boolean =
+        super.isSupported(sdkInt) && SystemProperties.releaseVersionMajor <= 15
 
     private val hookedLoaders = Collections.synchronizedSet(
         Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>())
