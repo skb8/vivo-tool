@@ -13,8 +13,9 @@ import com.skb8.vivotool.core.XLog
  * «Горизонт» с родными подписями и иконками. Камера сама сохраняет значение
  * «3», применяет mutex и показывает переключатель направления съёмки.
  * Прочитанные значения настроек в этой ветке не подменяются.
- * В этой сборке показ подсказки вынесен в `za.g.e2(boolean)`; его отключаем,
- * поскольку `za.a.o()` обращается к отсутствующему `R.raw.horizon_tip`.
+ * DexKit находит подсказку по идентификатору функции горизонта, независимо
+ * от обфусцированных имён UI. Подсказку отключаем: в части сборок отсутствует
+ * её видеоресурс `horizon_tip`. Конфигурацию ищем в иерархии активной модели.
  *
  * Android 15 и ниже: прежняя подмена «стандартной» стабилизации, описанная ниже.
  *
@@ -57,10 +58,6 @@ object CameraHorizonEisHook : BaseHook() {
     /** Показ обучающей подсказки о съёмке с горизонтом. */
     private const val TIPS_METHOD = "showOrHideHelpTipsView"
 
-    /** NormalVideoModuleUI в новой сборке камеры (имя подтверждено в JADX). */
-    private const val NATIVE_MODULE_UI_CLASS = "za.g"
-    private const val NATIVE_TIPS_METHOD = "e2"
-
     /** `ISettingKeys.KEY_VIDEO_STABLE`. */
     private const val STABLE_KEY = "pref_video_super_stable"
 
@@ -92,43 +89,30 @@ object CameraHorizonEisHook : BaseHook() {
 
     /** Штатное меню: «Выкл», «Ультра», «Стандартная» и отдельный «Горизонт». */
     private fun enableNativeHorizonMode() {
-        // Убираем обращение к отсутствующему видео до включения штатного режима.
-        // e2(boolean) занимается исключительно подсказкой о горизонте.
-        val moduleUi = findClassOrNull(NATIVE_MODULE_UI_CLASS)
-        val tipsHook = moduleUi?.doNothing(
-            NATIVE_TIPS_METHOD, Boolean::class.javaPrimitiveType
-        )
-        if (tipsHook == null) {
-            XLog.w("[$id] подсказка о горизонте не отключена; штатный режим не включаем во избежание падения")
+        val targets = runCatching { CameraHorizonDexTargets.get(classLoader) }.getOrElse {
+            XLog.e("[$id] DexKit не смог однозначно найти горизонт; штатный режим не включён", it)
             return
         }
-        XLog.i("[$id] подсказка о горизонте отключена: $NATIVE_MODULE_UI_CLASS.$NATIVE_TIPS_METHOD")
-
-        // instance может быть фасадом, делегирующим вызов конфигу модели.
-        // Перехватываем также реализации в иерархии модели и общего конфига.
-        val activeConfig = findClassOrNull("com.android.camera.featureconfig.FeatureConfig")
-            ?.let { clazz ->
-                runCatching { clazz.getField("instance").get(null)?.javaClass }
-                    .onFailure { XLog.e("[$id] не удалось получить активный конфиг камеры", it) }
-                    .getOrNull()
+        val hooks = mutableListOf<Unhook>()
+        try {
+            // Resolve everything first, then disable the unsafe hint before enabling its mode.
+            hooks += requireNotNull(targets.tips.replaceWithConstant(null))
+            targets.versions.forEach { method ->
+                hooks += requireNotNull(method.replaceWithConstant(4))
             }
-        val targets = buildList {
-            activeConfig?.let { add(it) }
-            CameraFeatureConfigHook.classCandidates(CameraFeatureConfigHook.Source.CONFIG)
-                .mapNotNullTo(this) { findClassOrNull(it) }
-            findClassOrNull("com.android.camera.featureconfig.FeatureConfig_common")
-                ?.let { add(it) }
-        }.distinct()
-        val methods = targets.flatMap {
-            it.methodsInHierarchy("recordStableVersion", Int::class.javaPrimitiveType)
-        }.filter { it.parameterCount == 0 }.distinct()
-
-        val hooked = methods.count { it.replaceWithConstant(4) != null }
-        if (hooked == 0) {
-            XLog.w("[$id] recordStableVersion не перехвачен, штатный режим горизонта не включён")
-        } else {
-            XLog.i("[$id] штатный пункт «Горизонт» включён: recordStableVersion -> 4 ($hooked)")
+        } catch (t: Throwable) {
+            hooks.asReversed().forEach { it.unhook() }
+            XLog.e("[$id] не удалось включить горизонт; частичные изменения отменены", t)
+            return
         }
+        targets.callers.forEach { caller ->
+            runCatching {
+                if (xposed?.deoptimize(caller) != true) {
+                    XLog.w("[$id] не удалось деоптимизировать ${caller.toGenericString()}")
+                }
+            }.onFailure { XLog.e("[$id] деоптимизация ${caller.toGenericString()}", it) }
+        }
+        XLog.i("[$id] штатный пункт «Горизонт» включён через DexKit (${targets.versions.size} реализаций)")
     }
 
     private fun hookLegacyHorizonMode() {
