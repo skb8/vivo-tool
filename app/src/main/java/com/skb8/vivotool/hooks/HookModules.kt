@@ -14,6 +14,7 @@ import com.skb8.vivotool.hooks.settings.AboutPhoneCustomizationHook
 import com.skb8.vivotool.hooks.settings.SettingsListDividersHook
 import com.skb8.vivotool.hooks.share.VivoShareNoTimeoutHook
 import com.skb8.vivotool.hooks.systemui.VivoNewVolumeUiHook
+import com.skb8.vivotool.hooks.theme.FontImportHook
 import com.skb8.vivotool.hooks.updater.UpdaterInfoHook
 
 /**
@@ -42,6 +43,7 @@ object HookModules {
                 UpdaterInfoHook,
                 InstallerSkipSecurityHook,
                 InstallerLocalChecksHook,
+                FontImportHook,
             )
             if (com.skb8.vivotool.core.SystemProperties.releaseVersionMajor >= 16) {
                 list.addAll(listOf(AboutPhoneCustomizationHook, SettingsListDividersHook))

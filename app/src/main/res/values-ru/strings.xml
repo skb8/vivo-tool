@@ -163,4 +163,6 @@
     <string name="hook_installer_skip_security_description">Сразу показывает «Риски не обнаружены» для всех приложений без сканирования и запроса к серверам Vivo. Скрывает блок «Защита от необнаруженных потенциальных угроз».</string>
     <string name="hook_installer_local_checks_title">Пропуск локальных ограничений установки</string>
     <string name="hook_installer_local_checks_description">Пропускает проверки совместимости Vivo с Android, OriginOS, регионом и типом устройства, предупреждение о 32-битном приложении и предложение открыть установленную версию. Патч действует только на стороне установщика пакетов: Android продолжает проверять подпись, понижение версии и целостность APK.</string>
+    <string name="hook_theme_font_import_title">Импорт шрифтов</string>
+    <string name="hook_theme_font_import_description">Добавляет карточку «Импорт» в раздел «Стиль шрифта». Выберите файл TTF или OTF, затем нажмите на карточку шрифта, чтобы применить его.</string>
 </resources>
