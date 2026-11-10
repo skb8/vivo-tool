@@ -9,12 +9,16 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.net.Uri
+import android.os.Bundle
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
 import android.view.View
+import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.skb8.vivotool.R
@@ -43,7 +47,6 @@ object FontImportHook : BaseHook() {
     private val headers = WeakHashMap<Activity, WeakReference<LinearLayout>>()
 
     override fun onHook() {
-        val fragment = findClass("com.bbk.theme.fragment.CuteSettingsResListFragment")
         val activity = findClass("com.bbk.theme.ResListActivity")
         val database = findClass("com.bbk.theme.base.ResDbUtils")
         val helper = findClass("com.bbk.theme.apply.ApplyThemeHelper")
@@ -145,7 +148,11 @@ object FontImportHook : BaseHook() {
                 reload.invoke(instance.invoke(null), false, true, context)
             }
             val render: (Activity, LinearLayout) -> Unit = { host, header ->
-                renderCards(host, header, { currentId.invoke(null, FONT) as? String }, applyImported)
+                renderCards(host, header, {
+                    runCatching { currentId.invoke(null, FONT) as? String }
+                        .onFailure { XLog.e("[$id] Could not read the current font", it) }
+                        .getOrNull()
+                }, applyImported)
             }
             hooks += requireNotNull(activity.hookBefore(
                 "onActivityResult", intType, intType, Intent::class.java
@@ -157,27 +164,35 @@ object FontImportHook : BaseHook() {
                 val uri = param.arg<Intent>(2)?.data ?: return@hookBefore
                 importFont(host, uri, render)
             })
-            hooks += requireNotNull(fragment.hookAfter("setupViews") { param ->
+            hooks += installFontScreens(activity, render)
+        } catch (error: Throwable) {
+            hooks.asReversed().forEach { it.unhook() }
+            throw error
+        }
+    }
+
+    private fun installFontScreens(
+        activity: Class<*>,
+        render: (Activity, LinearLayout) -> Unit
+    ): List<Unhook> {
+        val hooks = mutableListOf<Unhook>()
+        findClassOrNull("com.bbk.theme.fragment.CuteSettingsResListFragment")?.let { fragment ->
+            fragment.hookAfter("setupViews") { param ->
                 val screen = param.thisObject ?: return@hookAfter
-                if (screen.getField("mResType") != FONT) return@hookAfter
-                val info = screen.getField("mResListInfo") ?: return@hookAfter
-                if (info.getField("fromSetting") != true) return@hookAfter
                 val host = screen.callMethod("getActivity") as? Activity ?: return@hookAfter
-                if (!activity.isInstance(host)) return@hookAfter
+                if (!activity.isInstance(host) || !isFontSettings(host, screen.getField("mResListInfo"))) {
+                    return@hookAfter
+                }
                 val adapter = screen.getField("mAdapter") ?: return@hookAfter
                 val previous = headers[host]?.get()
                 if (previous != null && adapter.callMethod("containView", previous) == true) return@hookAfter
-                val header = LinearLayout(host).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = ViewGroup.LayoutParams(-1, -2)
-                    setPadding(dp(16), dp(8), dp(16), dp(4))
-                }
-                render(host, header)
+                val header = createHeader(host)
+                header.layoutParams = ViewGroup.LayoutParams(-1, -2)
                 adapter.callMethod("addHeaderView", header)
-                headers[host] = WeakReference(header)
+                showCards(host, header, "CuteSettingsResListFragment", render)
                 adapter.callMethod("notifyDataSetChanged")
-            })
-            hooks += requireNotNull(fragment.hookAfter("updateList", ArrayList::class.java) { param ->
+            }?.let(hooks::add)
+            fragment.hookAfter("updateList", ArrayList::class.java) { param ->
                 val screen = param.thisObject ?: return@hookAfter
                 if (screen.getField("mResType") != FONT) return@hookAfter
                 val host = screen.callMethod("getActivity") as? Activity ?: return@hookAfter
@@ -189,11 +204,85 @@ object FontImportHook : BaseHook() {
                     (screen.getField("mEmptyLayout") as? View)?.visibility = View.GONE
                     (screen.getField("mRecyclerView") as? View)?.visibility = View.VISIBLE
                 }
-            })
-        } catch (error: Throwable) {
-            hooks.asReversed().forEach { it.unhook() }
-            throw error
+            }?.let(hooks::add)
         }
+        findClassOrNull("com.bbk.theme.list.SettingsEditThemeListFragment")?.let { fragment ->
+            fragment.hookAfter("onViewCreated", View::class.java, Bundle::class.java) { param ->
+                val screen = param.thisObject ?: return@hookAfter
+                val host = screen.callMethod("getActivity") as? Activity ?: return@hookAfter
+                if (!activity.isInstance(host)) return@hookAfter
+                val arguments = screen.callMethod("getArguments") as? Bundle ?: return@hookAfter
+                @Suppress("DEPRECATION")
+                val info = arguments.getSerializable("resListInfo")
+                if (!isFontSettings(host, info)) return@hookAfter
+                val root = param.arg<View>(0) ?: return@hookAfter
+                installEditorHeader(host, root, render)
+            }?.let(hooks::add)
+        }
+        if (hooks.isEmpty()) XLog.w("[$id] No compatible font settings screen found")
+        return hooks
+    }
+
+    private fun isFontSettings(host: Activity, info: Any?): Boolean {
+        if (info == null || info.getField("resType") != FONT) return false
+        if (info.getField("fromSetting") == true) return true
+        return when (host.intent?.action) {
+            "com.vivo.action.theme.setting.font",
+            "vivo.intent.action.theme.FONT_FROM_SETTINGS",
+            "com.vivo.action.theme.Font" -> true
+            else -> false
+        }
+    }
+
+    private fun installEditorHeader(host: Activity, root: View, render: (Activity, LinearLayout) -> Unit) {
+        val recyclerId = root.resources.getIdentifier("editThemeListRV", "id", host.packageName)
+        val recycler = root.findViewById<View>(recyclerId)
+        val nested = recycler?.parent as? View
+        val parent = nested?.parent as? RelativeLayout
+        val listParams = nested?.layoutParams as? RelativeLayout.LayoutParams
+        if (recycler == null || nested == null || parent == null || listParams == null) {
+            XLog.w("[$id] Could not find the list layout in SettingsEditThemeListFragment")
+            return
+        }
+        if (headers[host]?.get()?.parent?.parent === parent) return
+
+        // The editor addresses native rows by position, so keep its adapter and positions intact.
+        val header = createHeader(host)
+        val panel = object : ScrollView(host) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                val limit = resources.displayMetrics.heightPixels / 3
+                val height = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) limit
+                else minOf(MeasureSpec.getSize(heightMeasureSpec), limit)
+                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST))
+            }
+        }.apply {
+            id = View.generateViewId()
+            addView(header)
+        }
+        parent.addView(panel, RelativeLayout.LayoutParams(-1, -2).apply {
+            topMargin = recycler.paddingTop
+            addRule(RelativeLayout.ALIGN_PARENT_TOP)
+        })
+        listParams.addRule(RelativeLayout.BELOW, panel.id)
+        nested.layoutParams = listParams
+        recycler.setPaddingRelative(recycler.paddingStart, 0, recycler.paddingEnd, recycler.paddingBottom)
+        showCards(host, header, "SettingsEditThemeListFragment", render)
+    }
+
+    private fun createHeader(host: Activity) = LinearLayout(host).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(16), dp(8), dp(16), dp(4))
+    }
+
+    private fun showCards(
+        host: Activity,
+        header: LinearLayout,
+        screen: String,
+        render: (Activity, LinearLayout) -> Unit
+    ) {
+        render(host, header)
+        headers[host] = WeakReference(header)
+        XLog.i("[$id] Import card attached to $screen")
     }
 
     private fun importFont(host: Activity, uri: Uri, render: (Activity, LinearLayout) -> Unit) {
@@ -223,8 +312,9 @@ object FontImportHook : BaseHook() {
                 toast(host, host.localized("Не удалось открыть выбор файла", "Could not open the file picker"))
             }
         })
-        val current = currentId()
-        for (font in ImportedFonts.list(host)) {
+        val fonts = ImportedFonts.list(host)
+        val current = if (fonts.isEmpty()) null else currentId()
+        for (font in fonts) {
             val selected = font.id == current
             val view = card(host, font.name, if (selected) host.localized("Применён", "Applied")
                 else host.localized("Нажмите, чтобы применить", "Tap to apply")) {
